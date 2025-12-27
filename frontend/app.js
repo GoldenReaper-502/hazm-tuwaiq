@@ -1,33 +1,8 @@
-const API = "https://hazm-tuwaiq.onrender.com";
+const API_URL = "https://hazm-tuwaiq.onrender.com/incidents";
 
 async function loadIncidents() {
-  const res = await fetch(`${API}/incidents`);
+  const res = await fetch(API_URL);
   const data = await res.json();
-
-  const list = document.getElementById("incidentList");
-  list.innerHTML = "";
-
-  data.forEach(i => {
-    const li = document.createElement("li");
-    li.textContent = `${i.title} – ${i.severity}`;
-    list.appendChild(li);
-  });
+  document.getElementById("output").textContent =
+    JSON.stringify(data, null, 2);
 }
-
-async function createIncident() {
-  const body = {
-    title: document.getElementById("title").value,
-    location: document.getElementById("location").value,
-    severity: document.getElementById("severity").value
-  };
-
-  await fetch(`${API}/incidents`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
-  });
-
-  loadIncidents();
-}
-
-loadIncidents();
