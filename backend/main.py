@@ -1,11 +1,17 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 app = FastAPI(title="Hazm Tuwaiq API", version="0.1.0")
 
 
+def utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+# ---------- Models ----------
 class HealthResponse(BaseModel):
     status: str
     service: str
@@ -24,14 +30,12 @@ class Incident(IncidentCreate):
     created_at_utc: str
 
 
+# ---------- In-memory DB (MVP) ----------
 INCIDENTS: List[Incident] = []
-incident_id = 1
+NEXT_ID = 1
 
 
-def utc_now():
-    return datetime.utcnow().isoformat() + "Z"
-
-
+# ---------- Routes ----------
 @app.get("/", response_model=HealthResponse)
 def root():
     return {
@@ -41,19 +45,28 @@ def root():
     }
 
 
+@app.get("/incidents", response_model=List[Incident])
+def list_incidents():
+    return INCIDENTS
+
+
 @app.post("/incidents", response_model=Incident)
 def create_incident(data: IncidentCreate):
-    global incident_id
+    global NEXT_ID
     item = Incident(
-        id=incident_id,
+        id=NEXT_ID,
         created_at_utc=utc_now(),
         **data.model_dump(),
     )
     INCIDENTS.append(item)
-    incident_id += 1
+    NEXT_ID += 1
     return item
 
 
-@app.get("/incidents", response_model=List[Incident])
-def list_incidents():
-    return INCIDENTS
+@app.get("/incidents/{incident_id}", response_model=Incident)
+def get_incident(incident_id: int):
+    for item in INCIDENTS:
+        if item.id == incident_id:
+            return item
+    raise HTTPException(status_code=404, detail="Incident not found")
+
