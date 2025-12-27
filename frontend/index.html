@@ -6,27 +6,33 @@
   <title>Hazm Tuwaiq — منصة إدارة المخاطر والسلامة</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
-<<header class="header">
-  <img src="assets/logo.png" alt="Hazm Tuwaiq Logo" class="logo">
 
-  <div class="brand-text">
-    <h1>حزم طويق</h1>
-    <p class="subtitle">بالحزم نواجه المخاطر... وبطويق نصمد</p>
-  </div>
-</header>
-      </div>
-    </div>
+<body>
 
-    <div class="env">
-      <label class="label">API URL</label>
-      <input id="apiUrl" class="input" placeholder="https://hazm-tuwaiq.onrender.com" />
-      <label class="label">API KEY</label>
-      <input id="apiKey" class="input" placeholder="اختياري إذا عندك حماية" />
-      <button id="saveCfg" class="btn">حفظ</button>
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <img src="assets/logo.png" alt="Hazm Tuwaiq Logo" class="logo">
+
+    <div class="brand-text">
+      <h1>حزم طويق</h1>
+      <p class="subtitle">بالحزم نواجه المخاطر... وبطويق نصمد</p>
     </div>
   </header>
 
+  <!-- ===== API CONFIG ===== -->
+  <section class="env">
+    <label class="label">API URL</label>
+    <input id="apiUrl" class="input" placeholder="https://hazm-tuwaiq.onrender.com" />
+
+    <label class="label">API KEY</label>
+    <input id="apiKey" class="input" placeholder="اختياري إذا عندك حماية" />
+
+    <button id="saveCfg" class="btn">حفظ</button>
+  </section>
+
+  <!-- ===== MAIN ===== -->
   <main class="container">
+
     <section class="card">
       <div class="card-head">
         <h2>حالة النظام</h2>
@@ -38,86 +44,40 @@
     <section class="card">
       <div class="card-head">
         <h2>إضافة حادث / بلاغ</h2>
-        <button id="btnCreateDemo" class="btn ghost">إضافة مثال</button>
       </div>
 
       <form id="incidentForm" class="form">
-        <div class="grid">
-          <div>
-            <label class="label">العنوان</label>
-            <input id="title" class="input" required minlength="3" maxlength="120" placeholder="مثال: انسكاب زيت" />
-          </div>
-          <div>
-            <label class="label">الموقع</label>
-            <input id="location" class="input" placeholder="Gate 3 / Roundabout 6" />
-          </div>
-          <div>
-            <label class="label">الخطورة</label>
-            <select id="severity" class="input" required>
-              <option value="low">Low</option>
-              <option value="medium" selected>Medium</option>
-              <option value="high">High</option>
-              <option value="critical">Critical</option>
-            </select>
-          </div>
-          <div>
-            <label class="label">الوصف</label>
-            <input id="description" class="input" placeholder="تفاصيل مختصرة" />
-          </div>
-        </div>
+        <input id="title" class="input" placeholder="العنوان" required />
+        <input id="location" class="input" placeholder="الموقع" />
 
-        <div class="actions">
-          <button class="btn" type="submit">إرسال</button>
-          <button class="btn danger" type="button" id="btnClear">مسح</button>
-        </div>
+        <select id="severity" class="input">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+          <option value="critical">Critical</option>
+        </select>
+
+        <input id="description" class="input" placeholder="الوصف" />
+
+        <button class="btn" type="submit">إرسال</button>
       </form>
 
-      <pre id="createOut" class="pre muted">سيظهر الرد هنا</pre>
+      <pre id="createOut" class="pre muted"></pre>
     </section>
 
     <section class="card">
       <div class="card-head">
         <h2>قائمة البلاغات</h2>
-        <div class="row">
-          <button id="btnList" class="btn">تحديث القائمة</button>
-          <button id="btnClearList" class="btn ghost">مسح العرض</button>
-        </div>
+        <button id="btnList" class="btn">تحديث</button>
       </div>
-
-      <div id="listWrap" class="list"></div>
+      <div id="listWrap"></div>
     </section>
 
-    <section class="card">
-      <div class="card-head">
-        <h2>رفع ملف (Uploads)</h2>
-      </div>
-
-      <form id="uploadForm" class="form">
-        <div class="grid">
-          <div>
-            <label class="label">Tag (اختياري)</label>
-            <input id="uploadTag" class="input" placeholder="incident / photo / report" />
-          </div>
-          <div>
-            <label class="label">ملف</label>
-            <input id="uploadFile" class="input" type="file" />
-          </div>
-        </div>
-
-        <div class="actions">
-          <button class="btn" type="submit">رفع</button>
-          <button id="btnListUploads" class="btn ghost" type="button">عرض المرفوعات</button>
-        </div>
-      </form>
-
-      <pre id="uploadOut" class="pre muted">سيظهر الرد هنا</pre>
-      <div id="uploadsWrap" class="list"></div>
-    </section>
   </main>
 
+  <!-- ===== FOOTER ===== -->
   <footer class="footer">
-    <span>© Hazm Tuwaiq MVP</span>
-    <a href="#" id="openDocs">Docs</a>
+    © Hazm Tuwaiq MVP
   </footer>
 
   <script src="./app.js"></script>
