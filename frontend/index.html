@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Hazm Tuwaiq Platform</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <h1>Hazm Tuwaiq – HSE Platform</h1>
+
+  <section>
+    <h2>Create Incident</h2>
+    <input id="title" placeholder="Title" />
+    <input id="location" placeholder="Location" />
+    <select id="severity">
+      <option value="low">Low</option>
+      <option value="medium">Medium</option>
+      <option value="high">High</option>
+      <option value="critical">Critical</option>
+    </select>
+    <button onclick="createIncident()">Submit</button>
+  </section>
+
+  <section>
+    <h2>Incidents</h2>
+    <ul id="incidentList"></ul>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>
