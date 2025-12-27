@@ -1,0 +1,553 @@
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Dict, List, Optional, Any
+from fastapi import FastAPI, HTTPException, Header, Query, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+
+APP_NAME = "Hazm Tuwaiq API"
+APP_VERSION = "0.1.0"
+
+# =========================
+# Simple Security (Optional)
+# =========================
+# ضع API Key داخل Render Environment:
+# HAZM_API_KEY = "anything"
+# إذا ما ضبطته = ما فيه حماية (يسمح للجميع)
+import os
+HAZM_API_KEY = os.getenv("HAZM_API_KEY", "").strip()
+
+
+def require_api_key(x_api_key: Optional[str]) -> None:
+    if not HAZM_API_KEY:
+        return  # No protection enabled
+    if not x_api_key or x_api_key.strip() != HAZM_API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")
+
+
+# =========================
+# App
+# =========================
+app = FastAPI(title=APP_NAME, version=APP_VERSION)
+
+# CORS (عدل الدومين لاحقًا عندك)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # في الإنتاج حط دومينك فقط
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# =========================
+# Helpers
+# =========================
+def utc_now() -> str:
+    return datetime.utcnow().isoformat() + "Z"
+
+
+def new_id(prefix: str, counter: int) -> str:
+    return f"{prefix}_{counter:06d}"
+
+
+# =========================
+# In-memory "DB"
+# =========================
+DB: Dict[str, Any] = {
+    "users": [],            # list[User]
+    "incidents": [],        # list[Incident]
+    "risk_assessments": [], # list[RiskAssessment]
+    "inspections": [],      # list[Inspection]
+    "uploads": [],          # list[UploadMeta]
+}
+
+COUNTERS = {
+    "user": 1,
+    "incident": 1,
+    "ra": 1,
+    "inspection": 1,
+    "upload": 1,
+}
+
+
+# =========================
+# Models
+# =========================
+class HealthResponse(BaseModel):
+    status: str
+    service: str
+    time_utc: str
+    version: str
+
+
+class ApiMessage(BaseModel):
+    ok: bool = True
+    message: str
+
+
+# ---- Auth / Users (MVP) ----
+class UserCreate(BaseModel):
+    full_name: str = Field(..., min_length=2, max_length=80)
+    email: str = Field(..., min_length=6, max_length=120)
+    password: str = Field(..., min_length=4, max_length=120)
+    role: str = Field(default="user", pattern="^(user|admin|hse|manager)$")
+
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+
+class User(BaseModel):
+    id: str
+    full_name: str
+    email: str
+    role: str
+    created_at_utc: str
+
+
+class AuthToken(BaseModel):
+    token: str
+    user: User
+
+
+# ---- Incidents ----
+class IncidentCreate(BaseModel):
+    title: str = Field(..., min_length=3, max_length=120)
+    location: Optional[str] = Field(default=None, max_length=120)
+    description: Optional[str] = Field(default=None, max_length=2000)
+    severity: str = Field(..., pattern="^(low|medium|high|critical)$")
+    category: Optional[str] = Field(default=None, max_length=80)  # near-miss, injury, property damage...
+    reported_by: Optional[str] = Field(default=None, max_length=80)  # name or id
+    status: str = Field(default="open", pattern="^(open|investigating|closed)$")
+
+
+class Incident(IncidentCreate):
+    id: str
+    created_at_utc: str
+    updated_at_utc: str
+
+
+# ---- Risk Assessment (RA) ----
+class RiskAssessmentCreate(BaseModel):
+    activity: str = Field(..., min_length=3, max_length=180)
+    location: Optional[str] = Field(default=None, max_length=120)
+    hazards: List[str] = Field(default_factory=list)
+    controls: List[str] = Field(default_factory=list)
+    risk_level: str = Field(default="medium", pattern="^(low|medium|high|critical)$")
+    owner: Optional[str] = Field(default=None, max_length=80)
+    status: str = Field(default="draft", pattern="^(draft|approved|archived)$")
+
+
+class RiskAssessment(RiskAssessmentCreate):
+    id: str
+    created_at_utc: str
+    updated_at_utc: str
+
+
+# ---- Inspection / Checklist ----
+class InspectionItem(BaseModel):
+    question: str = Field(..., min_length=3, max_length=200)
+    answer: str = Field(..., pattern="^(yes|no|na)$")
+    note: Optional[str] = Field(default=None, max_length=500)
+
+
+class InspectionCreate(BaseModel):
+    site: str = Field(..., min_length=2, max_length=120)
+    inspector: Optional[str] = Field(default=None, max_length=80)
+    date_utc: Optional[str] = None
+    items: List[InspectionItem] = Field(default_factory=list)
+    overall_status: str = Field(default="open", pattern="^(open|closed)$")
+
+
+class Inspection(InspectionCreate):
+    id: str
+    created_at_utc: str
+    updated_at_utc: str
+
+
+# ---- Upload metadata (MVP) ----
+class UploadMeta(BaseModel):
+    id: str
+    filename: str
+    content_type: Optional[str] = None
+    size_bytes: Optional[int] = None
+    tag: Optional[str] = None
+    created_at_utc: str
+
+
+# =========================
+# Root + Health
+# =========================
+@app.get("/", response_model=HealthResponse)
+def root():
+    return HealthResponse(
+        status="ok",
+        service="Hazm Tuwaiq backend is running",
+        time_utc=utc_now(),
+        version=APP_VERSION,
+    )
+
+
+@app.get("/health", response_model=HealthResponse)
+def health():
+    return root()
+
+
+# =========================
+# Auth (MVP)
+# =========================
+def find_user_by_email(email: str) -> Optional[User]:
+    for u in DB["users"]:
+        if u["email"].lower() == email.lower():
+            return User(**u)
+    return None
+
+
+@app.post("/auth/register", response_model=User)
+def register(payload: UserCreate, x_api_key: Optional[str] = Header(default=None)):
+    require_api_key(x_api_key)
+
+    if find_user_by_email(payload.email):
+        raise HTTPException(status_code=409, detail="Email already registered")
+
+    user_id = new_id("usr", COUNTERS["user"])
+    COUNTERS["user"] += 1
+
+    user = User(
+        id=user_id,
+        full_name=payload.full_name,
+        email=payload.email,
+        role=payload.role,
+        created_at_utc=utc_now(),
+    )
+
+    # ⚠️ MVP فقط: نخزن كلمة المرور plain text داخل ذاكرة مؤقتة (غير آمن للإنتاج).
+    # للإنتاج: استخدم hashing + DB
+    DB["users"].append(
+        {
+            **user.model_dump(),
+            "_password": payload.password,
+        }
+    )
+    return user
+
+
+@app.post("/auth/login", response_model=AuthToken)
+def login(payload: UserLogin, x_api_key: Optional[str] = Header(default=None)):
+    require_api_key(x_api_key)
+
+    for u in DB["users"]:
+        if u["email"].lower() == payload.email.lower() and u.get("_password") == payload.password:
+            user = User(**{k: v for k, v in u.items() if not k.startswith("_")})
+            # MVP token
+            token = f"demo-token::{user.id}::{int(datetime.utcnow().timestamp())}"
+            return AuthToken(token=token, user=user)
+
+    raise HTTPException(status_code=401, detail="Invalid email or password")
+
+
+@app.get("/users", response_model=List[User])
+def list_users(x_api_key: Optional[str] = Header(default=None)):
+    require_api_key(x_api_key)
+    return [User(**{k: v for k, v in u.items() if not k.startswith("_")}) for u in DB["users"]]
+
+
+# =========================
+# Incidents
+# =========================
+def get_incident_or_404(incident_id: str) -> Dict[str, Any]:
+    for item in DB["incidents"]:
+        if item["id"] == incident_id:
+            return item
+    raise HTTPException(status_code=404, detail="Incident not found")
+
+
+@app.get("/incidents", response_model=List[Incident])
+def list_incidents(
+    q: Optional[str] = Query(default=None, description="Search in title/description/location"),
+    severity: Optional[str] = Query(default=None, pattern="^(low|medium|high|critical)$"),
+    status: Optional[str] = Query(default=None, pattern="^(open|investigating|closed)$"),
+    x_api_key: Optional[str] = Header(default=None),
+):
+    require_api_key(x_api_key)
+
+    items = DB["incidents"]
+    if severity:
+        items = [i for i in items if i["severity"] == severity]
+    if status:
+        items = [i for i in items if i["status"] == status]
+    if q:
+        ql = q.lower()
+        def hit(i: Dict[str, Any]) -> bool:
+            return (
+                ql in (i.get("title") or "").lower()
+                or ql in (i.get("description") or "").lower()
+                or ql in (i.get("location") or "").lower()
+            )
+        items = [i for i in items if hit(i)]
+
+    return [Incident(**i) for i in items]
+
+
+@app.post("/incidents", response_model=Incident)
+def create_incident(payload: IncidentCreate, x_api_key: Optional[str] = Header(default=None)):
+    require_api_key(x_api_key)
+
+    incident_id = new_id("inc", COUNTERS["incident"])
+    COUNTERS["incident"] += 1
+
+    now = utc_now()
+    item = Incident(
+        id=incident_id,
+        created_at_utc=now,
+        updated_at_utc=now,
+        **payload.model_dump(),
+    )
+
+    DB["incidents"].append(item.model_dump())
+    return item
+
+
+@app.get("/incidents/{incident_id}", response_model=Incident)
+def get_incident(incident_id: str, x_api_key: Optional[str] = Header(default=None)):
+    require_api_key(x_api_key)
+    item = get_incident_or_404(incident_id)
+    return Incident(**item)
+
+
+class IncidentUpdate(BaseModel):
+    title: Optional[str] = Field(default=None, min_length=3, max_length=120)
+    location: Optional[str] = Field(default=None, max_length=120)
+    description: Optional[str] = Field(default=None, max_length=2000)
+    severity: Optional[str] = Field(default=None, pattern="^(low|medium|high|critical)$")
+    category: Optional[str] = Field(default=None, max_length=80)
+    reported_by: Optional[str] = Field(default=None, max_length=80)
+    status: Optional[str] = Field(default=None, pattern="^(open|investigating|closed)$")
+
+
+@app.patch("/incidents/{incident_id}", response_model=Incident)
+def update_incident(incident_id: str, payload: IncidentUpdate, x_api_key: Optional[str] = Header(default=None)):
+    require_api_key(x_api_key)
+
+    item = get_incident_or_404(incident_id)
+    updates = {k: v for k, v in payload.model_dump().items() if v is not None}
+    item.update(updates)
+    item["updated_at_utc"] = utc_now()
+    return Incident(**item)
+
+
+@app.delete("/incidents/{incident_id}", response_model=ApiMessage)
+def delete_incident(incident_id: str, x_api_key: Optional[str] = Header(default=None)):
+    require_api_key(x_api_key)
+
+    before = len(DB["incidents"])
+    DB["incidents"] = [i for i in DB["incidents"] if i["id"] != incident_id]
+    if len(DB["incidents"]) == before:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    return ApiMessage(message="Incident deleted")
+
+
+# =========================
+# Risk Assessments
+# =========================
+def get_ra_or_404(ra_id: str) -> Dict[str, Any]:
+    for item in DB["risk_assessments"]:
+        if item["id"] == ra_id:
+            return item
+    raise HTTPException(status_code=404, detail="Risk assessment not found")
+
+
+@app.get("/risk-assessments", response_model=List[RiskAssessment])
+def list_risk_assessments(
+    risk_level: Optional[str] = Query(default=None, pattern="^(low|medium|high|critical)$"),
+    status: Optional[str] = Query(default=None, pattern="^(draft|approved|archived)$"),
+    x_api_key: Optional[str] = Header(default=None),
+):
+    require_api_key(x_api_key)
+
+    items = DB["risk_assessments"]
+    if risk_level:
+        items = [i for i in items if i["risk_level"] == risk_level]
+    if status:
+        items = [i for i in items if i["status"] == status]
+    return [RiskAssessment(**i) for i in items]
+
+
+@app.post("/risk-assessments", response_model=RiskAssessment)
+def create_risk_assessment(payload: RiskAssessmentCreate, x_api_key: Optional[str] = Header(default=None)):
+    require_api_key(x_api_key)
+
+    ra_id = new_id("ra", COUNTERS["ra"])
+    COUNTERS["ra"] += 1
+
+    now = utc_now()
+    item = RiskAssessment(
+        id=ra_id,
+        created_at_utc=now,
+        updated_at_utc=now,
+        **payload.model_dump(),
+    )
+    DB["risk_assessments"].append(item.model_dump())
+    return item
+
+
+@app.get("/risk-assessments/{ra_id}", response_model=RiskAssessment)
+def get_risk_assessment(ra_id: str, x_api_key: Optional[str] = Header(default=None)):
+    require_api_key(x_api_key)
+    item = get_ra_or_404(ra_id)
+    return RiskAssessment(**item)
+
+
+class RiskAssessmentUpdate(BaseModel):
+    activity: Optional[str] = Field(default=None, min_length=3, max_length=180)
+    location: Optional[str] = Field(default=None, max_length=120)
+    hazards: Optional[List[str]] = None
+    controls: Optional[List[str]] = None
+    risk_level: Optional[str] = Field(default=None, pattern="^(low|medium|high|critical)$")
+    owner: Optional[str] = Field(default=None, max_length=80)
+    status: Optional[str] = Field(default=None, pattern="^(draft|approved|archived)$")
+
+
+@app.patch("/risk-assessments/{ra_id}", response_model=RiskAssessment)
+def update_risk_assessment(ra_id: str, payload: RiskAssessmentUpdate, x_api_key: Optional[str] = Header(default=None)):
+    require_api_key(x_api_key)
+    item = get_ra_or_404(ra_id)
+
+    updates = payload.model_dump()
+    updates = {k: v for k, v in updates.items() if v is not None}
+    item.update(updates)
+    item["updated_at_utc"] = utc_now()
+    return RiskAssessment(**item)
+
+
+@app.delete("/risk-assessments/{ra_id}", response_model=ApiMessage)
+def delete_risk_assessment(ra_id: str, x_api_key: Optional[str] = Header(default=None)):
+    require_api_key(x_api_key)
+
+    before = len(DB["risk_assessments"])
+    DB["risk_assessments"] = [i for i in DB["risk_assessments"] if i["id"] != ra_id]
+    if len(DB["risk_assessments"]) == before:
+        raise HTTPException(status_code=404, detail="Risk assessment not found")
+    return ApiMessage(message="Risk assessment deleted")
+
+
+# =========================
+# Inspections / Checklists
+# =========================
+def get_inspection_or_404(ins_id: str) -> Dict[str, Any]:
+    for item in DB["inspections"]:
+        if item["id"] == ins_id:
+            return item
+    raise HTTPException(status_code=404, detail="Inspection not found")
+
+
+@app.get("/inspections", response_model=List[Inspection])
+def list_inspections(
+    site: Optional[str] = Query(default=None),
+    overall_status: Optional[str] = Query(default=None, pattern="^(open|closed)$"),
+    x_api_key: Optional[str] = Header(default=None),
+):
+    require_api_key(x_api_key)
+
+    items = DB["inspections"]
+    if site:
+        sl = site.lower()
+        items = [i for i in items if sl in (i.get("site") or "").lower()]
+    if overall_status:
+        items = [i for i in items if i["overall_status"] == overall_status]
+    return [Inspection(**i) for i in items]
+
+
+@app.post("/inspections", response_model=Inspection)
+def create_inspection(payload: InspectionCreate, x_api_key: Optional[str] = Header(default=None)):
+    require_api_key(x_api_key)
+
+    ins_id = new_id("ins", COUNTERS["inspection"])
+    COUNTERS["inspection"] += 1
+
+    now = utc_now()
+    item = Inspection(
+        id=ins_id,
+        created_at_utc=now,
+        updated_at_utc=now,
+        date_utc=payload.date_utc or utc_now(),
+        **payload.model_dump(exclude={"date_utc"}),
+    )
+    DB["inspections"].append(item.model_dump())
+    return item
+
+
+@app.get("/inspections/{inspection_id}", response_model=Inspection)
+def get_inspection(inspection_id: str, x_api_key: Optional[str] = Header(default=None)):
+    require_api_key(x_api_key)
+    item = get_inspection_or_404(inspection_id)
+    return Inspection(**item)
+
+
+class InspectionUpdate(BaseModel):
+    site: Optional[str] = Field(default=None, min_length=2, max_length=120)
+    inspector: Optional[str] = Field(default=None, max_length=80)
+    overall_status: Optional[str] = Field(default=None, pattern="^(open|closed)$")
+    items: Optional[List[InspectionItem]] = None
+
+
+@app.patch("/inspections/{inspection_id}", response_model=Inspection)
+def update_inspection(inspection_id: str, payload: InspectionUpdate, x_api_key: Optional[str] = Header(default=None)):
+    require_api_key(x_api_key)
+    item = get_inspection_or_404(inspection_id)
+
+    updates = payload.model_dump()
+    updates = {k: v for k, v in updates.items() if v is not None}
+    item.update(updates)
+    item["updated_at_utc"] = utc_now()
+    return Inspection(**item)
+
+
+@app.delete("/inspections/{inspection_id}", response_model=ApiMessage)
+def delete_inspection(inspection_id: str, x_api_key: Optional[str] = Header(default=None)):
+    require_api_key(x_api_key)
+
+    before = len(DB["inspections"])
+    DB["inspections"] = [i for i in DB["inspections"] if i["id"] != inspection_id]
+    if len(DB["inspections"]) == before:
+        raise HTTPException(status_code=404, detail="Inspection not found")
+    return ApiMessage(message="Inspection deleted")
+
+
+# =========================
+# Upload (metadata only for MVP)
+# =========================
+@app.post("/uploads", response_model=UploadMeta)
+async def upload_file(
+    file: UploadFile = File(...),
+    tag: Optional[str] = Query(default=None),
+    x_api_key: Optional[str] = Header(default=None),
+):
+    require_api_key(x_api_key)
+
+    # نقرأ جزء بسيط لحساب الحجم تقريبياً (بدون تخزين)
+    content = await file.read()
+    size_bytes = len(content)
+
+    up_id = new_id("up", COUNTERS["upload"])
+    COUNTERS["upload"] += 1
+
+    meta = UploadMeta(
+        id=up_id,
+        filename=file.filename,
+        content_type=file.content_type,
+        size_bytes=size_bytes,
+        tag=tag,
+        created_at_utc=utc_now(),
+    )
+    DB["uploads"].append(meta.model_dump())
+    return meta
+
+
+@app.get("/uploads", response_model=List[UploadMeta])
+def list_uploads(x_api_key: Optional[str] = Header(default=None)):
+    require_api_key(x_api_key)
+    return [UploadMeta(**u) for u in DB["uploads"]]
