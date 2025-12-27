@@ -1,31 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar">
 <head>
   <meta charset="UTF-8" />
-  <title>Hazm Tuwaiq Platform</title>
+  <title>Hazm Tuwaiq | حزم طويق</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <header>
+    <img src="logo.png" alt="Hazm Tuwaiq" class="logo" />
+    <h1>منصة حزم طويق</h1>
+    <p>إدارة السلامة والمخاطر</p>
+  </header>
 
-  <h1>Hazm Tuwaiq – HSE Platform</h1>
-
-  <section>
-    <h2>Create Incident</h2>
-    <input id="title" placeholder="Title" />
-    <input id="location" placeholder="Location" />
-    <select id="severity">
-      <option value="low">Low</option>
-      <option value="medium">Medium</option>
-      <option value="high">High</option>
-      <option value="critical">Critical</option>
-    </select>
-    <button onclick="createIncident()">Submit</button>
-  </section>
-
-  <section>
-    <h2>Incidents</h2>
-    <ul id="incidentList"></ul>
-  </section>
+  <main>
+    <button onclick="loadIncidents()">تحميل البلاغات</button>
+    <pre id="output"></pre>
+  </main>
 
   <script src="app.js"></script>
 </body>
