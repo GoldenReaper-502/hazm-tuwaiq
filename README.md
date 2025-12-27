@@ -1,3 +1,3 @@
 # Hazm Tuwaiq
 
-HSE & Risk Management Platform – MVP
+HSE & Risk Management Platform 
