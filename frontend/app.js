@@ -1,5 +1,5 @@
 // ====== إعدادات ======
-const DEFAULT_API = "https://hazm-tuwaiq.onrender.com"; // عدّلها لرابط الـ backend عندك
+const DEFAULT_API = "https://hazm-tuwaiq-aqjk.onrender.com"; // عدّلها لرابط الـ backend عندك
 const LS_API = "hazm_api_url";
 const LS_KEY = "hazm_api_key";
 
