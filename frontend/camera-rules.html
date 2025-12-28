@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Camera Rules</title>
+  <style>body{font-family:Arial;padding:20px}label{display:block;margin-top:8px}</style>
+</head>
+<body>
+  <h2>Camera Rules & Zones Manager</h2>
+  <div>
+    <label>API Base: <input id="apiBase" value="http://localhost:8000"></label>
+    <button id="loadCams">Load Cameras</button>
+  </div>
+  <div id="cams"></div>
+
+  <script>
+    async function jsonReq(url, method='GET', body){
+      const opts = {method, headers: {'Content-Type':'application/json'}};
+      if(body) opts.body = JSON.stringify(body);
+      const r = await fetch(url, opts);
+      return r.json();
+    }
+
+    document.getElementById('loadCams').onclick = async ()=>{
+      const base = document.getElementById('apiBase').value;
+      const r = await fetch(base + '/cctv/cameras');
+      const cams = await r.json();
+      const el = document.getElementById('cams'); el.innerHTML='';
+      cams.forEach(c=>{
+        const div = document.createElement('div'); div.style.border='1px solid #ddd'; div.style.padding='8px'; div.style.margin='8px 0';
+        div.innerHTML = `<b>${c.name}</b> (${c.id})<div>Zones: <pre>${JSON.stringify(c.zones||[],null,2)}</pre></div>`;
+        const add = document.createElement('button'); add.textContent='Add Zone';
+        add.onclick = async ()=>{
+          const zone = {id:'z_'+Date.now(), name:'zone', poly:[[0,0],[0,100],[100,100],[100,0]], dwell_threshold:5};
+          await jsonReq(base + '/cctv/cameras/'+c.id+'/zones','POST',zone);
+          alert('zone added');
+        };
+        const webhook = document.createElement('button'); webhook.textContent='Set Webhook';
+        webhook.onclick = async ()=>{
+          const url = prompt('Webhook URL'); if(!url) return;
+          await jsonReq(base + '/cctv/cameras/'+c.id+'/webhook','POST',{webhook_url:url});
+          alert('webhook set');
+        };
+        div.appendChild(add); div.appendChild(webhook);
+        el.appendChild(div);
+      });
+    };
+  </script>
+</body>
+</html>

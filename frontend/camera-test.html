@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>اختبار الكاميرا - Hazm Tuwaiq</title>
+  <style>
+    :root {
+      --bg1: #07110f;
+      --bg2: #0b2d24;
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.68);
+      --accent2: #20c997;
+      --accent: #ff9800;
+    }
+    
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: system-ui, -apple-system, "Segoe UI", Arial;
+      background: linear-gradient(180deg, var(--bg1), var(--bg2));
+      color: var(--text);
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    h1, h2, h3 { margin-top: 0; }
+    
+    .section {
+      background: rgba(10, 20, 18, .72);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 18px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 14px 50px rgba(0,0,0,.45);
+    }
+    
+    .status {
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    
+    .status.success {
+      background: rgba(32, 201, 151, 0.2);
+      border: 1px solid var(--accent2);
+      color: var(--accent2);
+    }
+    
+    .status.error {
+      background: rgba(244, 67, 54, 0.2);
+      border: 1px solid #f44336;
+      color: #f44336;
+    }
+    
+    .status.warning {
+      background: rgba(255, 152, 0, 0.2);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+    }
+    
+    .video-box {
+      position: relative;
+      width: 100%;
+      max-width: 640px;
+      margin: 16px auto;
+      background: #000;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid var(--accent2);
+    }
+    
+    video, canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 16px 0;
+    }
+    
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent2);
+      color: #000;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    button:hover:not(:disabled) {
+      background: #1ab38a;
+      transform: translateY(-2px);
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    button.danger {
+      background: #f44336;
+      color: #fff;
+    }
+    
+    button.danger:hover:not(:disabled) {
+      background: #da190b;
+    }
+    
+    .info {
+      background: rgba(32, 201, 151, 0.1);
+      border: 1px solid var(--accent2);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    
+    .device-list {
+      list-style: none;
+      padding: 0;
+      margin: 16px 0;
+    }
+    
+    .device-list li {
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      border-left: 3px solid var(--accent2);
+    }
+    
+    .device-label {
+      font-weight: 600;
+      color: var(--accent2);
+      font-family: monospace;
+      word-break: break-all;
+    }
+    
+    pre {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 8px;
+      padding: 12px;
+      overflow-x: auto;
+      font-size: 12px;
+    }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    
+    @media (max-width: 768px) {
+      .grid { grid-template-columns: 1fr; }
+      .section { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📷 اختبار الكاميرا - Hazm Tuwaiq</h1>
+    
+    <!-- Browser Support Section -->
+    <div class="section">
+      <h2>1️⃣ دعم المتصفح</h2>
+      <div id="browserStatus" class="status">جاري الفحص...</div>
+      <pre id="browserInfo"></pre>
+    </div>
+    
+    <!-- Permissions Section -->
+    <div class="section">
+      <h2>2️⃣ الصلاحيات</h2>
+      <div class="controls">
+        <button onclick="checkPermissions()">فحص الصلاحيات</button>
+      </div>
+      <pre id="permissionsInfo"></pre>
+    </div>
+    
+    <!-- Devices Section -->
+    <div class="section">
+      <h2>3️⃣ أجهزة الكاميرا</h2>
+      <div class="controls">
+        <button onclick="discoverDevices()">اكتشف الأجهزة</button>
+      </div>
+      <ul id="devicesList" class="device-list"></ul>
+    </div>
+    
+    <!-- Camera Test Section -->
+    <div class="section">
+      <h2>4️⃣ اختبار الكاميرا</h2>
+      
+      <div class="controls">
+        <select id="cameraSelect">
+          <option value="">اختر كاميرا...</option>
+        </select>
+        <button onclick="startCamera()">ابدأ الكاميرا</button>
+        <button onclick="stopCamera()" class="danger" disabled>أوقف الكاميرا</button>
+        <button onclick="captureFrame()">التقط صورة</button>
+      </div>
+      
+      <div class="video-box" id="videoBox" style="display:none;">
+        <video id="testVideo" autoplay playsinline muted></video>
+        <canvas id="testCanvas"></canvas>
+      </div>
+      
+      <div id="cameraStatus" class="status warning">متوقفة</div>
+      <div id="cameraError" style="display:none;" class="info" style="border-color: #f44336; background: rgba(244, 67, 54, 0.1);">
+        <strong>خطأ:</strong> <span id="errorMsg"></span>
+      </div>
+      
+      <div class="grid">
+        <div>
+          <h3>معلومات الكاميرا</h3>
+          <pre id="cameraInfo">لم تبدأ بعد</pre>
+        </div>
+        <div>
+          <h3>معلومات الإطار</h3>
+          <pre id="frameInfo">لم تلتقط إطار بعد</pre>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Troubleshooting Section -->
+    <div class="section">
+      <h2>❓ استكشاف الأخطاء</h2>
+      <div class="info">
+        <h3>المشاكل الشائعة:</h3>
+        <ul>
+          <li><strong>شاشة سوداء:</strong> تأكد من أن الكاميرا تعمل في تطبيق آخر. أغلقها وحاول مرة أخرى.</li>
+          <li><strong>الصلاحيات مرفوضة:</strong> تحقق من إعدادات الخصوصية. قد تحتاج إلى إعادة تشغيل المتصفح.</li>
+          <li><strong>HTTPS مطلوب:</strong> استخدم <code>localhost</code> أو <code>https</code> فقط.</li>
+          <li><strong>لا توجد كاميرا:</strong> تأكد من توصيل جهاز الكاميرا.</li>
+          <li><strong>NotReadableError:</strong> الكاميرا مستخدمة من قبل تطبيق آخر.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    function log(msg) {
+      console.log("[Camera Test]", msg);
+    }
+    
+    // Check Browser Support
+    window.addEventListener('DOMContentLoaded', async () => {
+      const browserStatus = document.getElementById('browserStatus');
+      const browserInfo = document.getElementById('browserInfo');
+      
+      const hasWebRTC = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+      const hasPermissions = !!navigator.permissions;
+      const isSecureContext = window.isSecureContext;
+      
+      const info = {
+        "Browser": navigator.userAgent.split(') ')[0] + ')',
+        "Web RTC Support": hasWebRTC ? "✓" : "✗",
+        "Permissions API": hasPermissions ? "✓" : "✗",
+        "Secure Context": isSecureContext ? "✓" : "✗",
+        "Protocol": window.location.protocol,
+        "Hostname": window.location.hostname,
+      };
+      
+      browserInfo.textContent = JSON.stringify(info, null, 2);
+      
+      if (hasWebRTC) {
+        browserStatus.className = 'status success';
+        browserStatus.textContent = '✓ المتصفح يدعم الكاميرا';
+      } else {
+        browserStatus.className = 'status error';
+        browserStatus.textContent = '✗ المتصفح لا يدعم الكاميرا';
+      }
+      
+      await discoverDevices();
+    });
+    
+    async function checkPermissions() {
+      const output = document.getElementById('permissionsInfo');
+      
+      try {
+        const perms = await navigator.permissions.query({ name: 'camera' });
+        const info = {
+          "Camera Permission": perms.state,
+          "Status": perms.state === 'granted' ? '✓ موافق' : (perms.state === 'prompt' ? '⚠ سؤال' : '✗ مرفوض'),
+        };
+        
+        // Listen for changes
+        perms.addEventListener('change', () => {
+          info["Last Check"] = new Date().toLocaleTimeString("ar-SA");
+        });
+        
+        output.textContent = JSON.stringify(info, null, 2);
+      } catch (e) {
+        output.textContent = `خطأ: ${e.message}\n\nقد لا يدعم المتصفح Permissions API`;
+      }
+    }
+    
+    async function discoverDevices() {
+      const list = document.getElementById('devicesList');
+      const select = document.getElementById('cameraSelect');
+      
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const cameras = devices.filter(d => d.kind === 'videoinput');
+        
+        list.innerHTML = '';
+        select.innerHTML = '<option value="">اختر كاميرا...</option>';
+        
+        if (cameras.length === 0) {
+          const li = document.createElement('li');
+          li.textContent = 'لا توجد كاميرات متاحة';
+          list.appendChild(li);
+          return;
+        }
+        
+        cameras.forEach((cam, idx) => {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <span class="device-label">#${idx + 1}</span>
+            <div>Name: ${cam.label || 'Unknown'}</div>
+            <div>ID: ${cam.deviceId}</div>
+          `;
+          list.appendChild(li);
+          
+          const opt = document.createElement('option');
+          opt.value = cam.deviceId;
+          opt.textContent = `${cam.label || `Camera ${idx + 1}`}`;
+          select.appendChild(opt);
+        });
+        
+        log(`Found ${cameras.length} camera(s)`);
+      } catch (e) {
+        log(`Error: ${e.message}`);
+        list.innerHTML = `<li>خطأ: ${e.message}</li>`;
+      }
+    }
+    
+    let stream = null;
+    let video = null;
+    let canvas = null;
+    let ctx = null;
+    
+    async function startCamera() {
+      const select = document.getElementById('cameraSelect');
+      const deviceId = select.value;
+      const videoBox = document.getElementById('videoBox');
+      const cameraStatus = document.getElementById('cameraStatus');
+      const cameraError = document.getElementById('cameraError');
+      
+      if (!deviceId) {
+        cameraError.style.display = 'block';
+        document.getElementById('errorMsg').textContent = 'اختر كاميرا أولاً';
+        return;
+      }
+      
+      try {
+        video = document.getElementById('testVideo');
+        canvas = document.getElementById('testCanvas');
+        ctx = canvas.getContext('2d');
+        
+        cameraStatus.textContent = '🟡 تحضير...';
+        cameraStatus.className = 'status warning';
+        cameraError.style.display = 'none';
+        
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: { exact: deviceId } },
+          audio: false,
+        });
+        
+        video.srcObject = stream;
+        
+        // Wait for video to load
+        await new Promise((resolve) => {
+          video.onloadedmetadata = () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            resolve();
+          };
+        });
+        
+        videoBox.style.display = 'block';
+        
+        const info = {
+          "Resolution": `${video.videoWidth}x${video.videoHeight}px`,
+          "State": "Running",
+          "Track": stream.getVideoTracks()[0].label,
+        };
+        
+        document.getElementById('cameraInfo').textContent = JSON.stringify(info, null, 2);
+        cameraStatus.textContent = `🟢 تعمل - ${video.videoWidth}x${video.videoHeight}`;
+        cameraStatus.className = 'status success';
+        
+        document.querySelector('button[onclick="startCamera()"]').disabled = true;
+        document.querySelector('button[onclick="stopCamera()"]').disabled = false;
+        
+        log('Camera started');
+      } catch (e) {
+        log(`Camera error: ${e.message}`);
+        cameraStatus.textContent = '🔴 خطأ';
+        cameraStatus.className = 'status error';
+        cameraError.style.display = 'block';
+        document.getElementById('errorMsg').textContent = e.message;
+      }
+    }
+    
+    function stopCamera() {
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
+      }
+      
+      const videoBox = document.getElementById('videoBox');
+      const cameraStatus = document.getElementById('cameraStatus');
+      
+      videoBox.style.display = 'none';
+      cameraStatus.textContent = '⚫ متوقفة';
+      cameraStatus.className = 'status warning';
+      
+      document.querySelector('button[onclick="startCamera()"]').disabled = false;
+      document.querySelector('button[onclick="stopCamera()"]').disabled = true;
+      
+      log('Camera stopped');
+    }
+    
+    function captureFrame() {
+      if (!video || video.videoWidth === 0) {
+        alert('ابدأ الكاميرا أولاً');
+        return;
+      }
+      
+      ctx.drawImage(video, 0, 0);
+      
+      const info = {
+        "Width": canvas.width,
+        "Height": canvas.height,
+        "Data URL Length": canvas.toDataURL('image/jpeg').length,
+        "Timestamp": new Date().toLocaleTimeString("ar-SA"),
+      };
+      
+      document.getElementById('frameInfo').textContent = JSON.stringify(info, null, 2);
+      log('Frame captured');
+    }
+  </script>
+</body>
+</html>

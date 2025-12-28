@@ -35,6 +35,7 @@
   </header>
 
   <main class="container">
+    <!-- System Status Section -->
     <section class="card">
       <div class="card-head">
         <h2>حالة النظام</h2>
@@ -43,6 +44,82 @@
       <pre id="statusOut" class="pre muted">اضغط "تحديث" لعرض الحالة</pre>
     </section>
 
+    <!-- Camera & Detection Section -->
+    <section class="card">
+      <div class="card-head">
+        <h2>📷 الكاميرا والكشف</h2>
+      </div>
+
+      <div id="cameraStatus" class="status-badge">
+        <span id="cameraStatusText">غير متصل</span>
+      </div>
+
+      <!-- Camera Controls -->
+      <div class="controls">
+        <div class="field">
+          <label for="deviceSelect">اختر جهاز الكاميرا</label>
+          <select id="deviceSelect">
+            <option value="">جاري البحث...</option>
+          </select>
+        </div>
+
+        <div class="actions">
+          <button id="startCamera" class="btn success">ابدأ الكاميرا</button>
+          <button id="stopCamera" class="btn danger" disabled>أوقف الكاميرا</button>
+          <button id="retryCamera" class="btn" disabled>إعادة محاولة</button>
+        </div>
+      </div>
+
+      <!-- Video Preview -->
+      <div id="videoContainer" class="video-container" style="display:none;">
+        <video id="cameraVideo" autoplay playsinline muted></video>
+        <canvas id="detectionCanvas"></canvas>
+      </div>
+
+      <!-- Detection Controls -->
+      <div class="controls">
+        <label class="checkbox">
+          <input id="enableDetection" type="checkbox" />
+          تفعيل الكشف التلقائي
+        </label>
+        <span id="detectionStats" class="text-muted">معلومات الكشف تظهر هنا</span>
+      </div>
+
+      <!-- Detection Results -->
+      <div id="detectionResult" class="info-box" style="display:none;">
+        <h3>نتائج الكشف الأخيرة</h3>
+        <pre id="detectionOutput" class="pre muted"></pre>
+        <button id="askAboutDetection" class="btn primary">اسأل عن هذا الكشف</button>
+      </div>
+
+      <pre id="cameraError" class="pre muted" style="display:none;"></pre>
+    </section>
+
+    <!-- Chat Section -->
+    <section class="card">
+      <div class="card-head">
+        <h2>💬 الدردشة والأسئلة</h2>
+        <button id="clearChat" class="btn danger">مسح الدردشة</button>
+      </div>
+
+      <!-- Chat Messages -->
+      <div id="chatMessages" class="chat-box"></div>
+
+      <!-- Chat Input -->
+      <div class="chat-input-group">
+        <textarea 
+          id="chatInput" 
+          class="chat-input" 
+          placeholder="اسأل سؤالك هنا..."
+          rows="2"
+        ></textarea>
+        <button id="sendChat" class="btn primary">إرسال</button>
+      </div>
+
+      <div id="chatStatus" class="text-muted" style="margin-top: 10px;"></div>
+    </section>
+
+    <!-- Incidents Section -->
     <section class="card">
       <div class="card-head">
         <h2>إضافة حادث / بلاغ</h2>
@@ -62,9 +139,10 @@
         <div class="field">
           <label for="incSeverity">الخطورة</label>
           <select id="incSeverity">
-            <option value="low">Low</option>
-            <option value="medium" selected>Medium</option>
-            <option value="high">High</option>
+            <option value="low">منخفضة</option>
+            <option value="medium" selected>متوسطة</option>
+            <option value="high">عالية</option>
+            <option value="critical">حرجة</option>
           </select>
         </div>
 
@@ -81,6 +159,7 @@
       <pre id="incOut" class="pre muted">سيظهر الرد هنا</pre>
     </section>
 
+    <!-- Incidents List -->
     <section class="card">
       <div class="card-head">
         <h2>قائمة البلاغات</h2>
@@ -89,6 +168,7 @@
       <div id="incidentsWrap" class="list"></div>
     </section>
 
+    <!-- Upload Section -->
     <section class="card">
       <div class="card-head">
         <h2>رفع ملف</h2>

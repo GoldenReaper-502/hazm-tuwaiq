@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hazm-backend
+    ports:
+      - "8000:8000"
+    environment:
+      # Core settings
+      - LOG_LEVEL=INFO
+      - SITE_LOCATION=Default Site
+      
+      # YOLO settings
+      - YOLO_CONF=0.25
+      - REPORT_RISK_THRESHOLD=0.2
+      
+      # CORS (adjust for your frontend URL)
+      - CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000,http://127.0.0.1:8000
+      
+      # Optional: API Key (for simple auth)
+      # - HAZM_API_KEY=your-secure-key-here
+      
+      # Optional: LLM API Keys (comment out to use mock)
+      # - OPENAI_API_KEY=sk-...
+      # - ANTHROPIC_API_KEY=sk-ant-...
+    
+    volumes:
+      - ./backend:/app  # For development; remove for production
+    
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # Optional: Frontend service (if using React)
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: hazm-frontend
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - REACT_APP_API_URL=http://localhost:8000
+  #   depends_on:
+  #     - backend
+  #   restart: unless-stopped

@@ -1,0 +1,75 @@
+# Environment
+.env
+.env.local
+.env.*.local
+.venv
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# Logs
+*.log
+logs/
+uvicorn.log
+uvicorn.pid
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (frontend)
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+.next/
+out/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Models (large)
+*.pt
+*.pth
+*.onnx
+*.pb
+
+# Docker
+docker-compose.override.yml
+
+# Misc
+.ipynb_checkpoints
+.mypy_cache/
+.dmypy.json
+dmypy.json

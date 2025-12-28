@@ -1,0 +1,19 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "cd backend && uvicorn app:app --host 0.0.0.0 --port $PORT --workers 2"
+healthCheckPath = "/health"
+healthCheckInterval = 30
+healthCheckTimeout = 10
+
+[env]
+PORT = "8000"
+PYTHONUNBUFFERED = "1"
+LOG_LEVEL = "INFO"
+YOLO_MODEL = "yolov8n.pt"
+YOLO_CONF = "0.25"
+TORCH_DEVICE = "cpu"
+REPORT_RISK_THRESHOLD = "0.3"
+CORS_ORIGINS = "*"
