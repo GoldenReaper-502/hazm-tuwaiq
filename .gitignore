@@ -1,11 +1,30 @@
-# Environment
-.env
-.env.local
-.env.*.local
-.venv
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
 venv/
-env/
 ENV/
+env/
+.venv
 
 # IDE
 .vscode/
@@ -13,63 +32,51 @@ ENV/
 *.swp
 *.swo
 *~
-*.sublime-project
-*.sublime-workspace
-
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-pip-log.txt
-pip-delete-this-directory.txt
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-.pytest_cache/
-*.egg-info/
-dist/
-build/
-
-# Logs
-*.log
-logs/
-uvicorn.log
-uvicorn.pid
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Node (frontend)
-frontend/node_modules/
-frontend/dist/
-frontend/build/
-.next/
-out/
+# Logs
+*.log
+logs/
+*.log.*
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
 
 # Database
 *.db
 *.sqlite
 *.sqlite3
 
-# Models (large)
-*.pt
-*.pth
-*.onnx
-*.pb
+# Models
+models/*.pth
+models/*.onnx
+!models/.gitkeep
+
+# Data
+data/*.json
+data/*.csv
+!data/.gitkeep
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
 
 # Docker
-docker-compose.override.yml
+.dockerignore
 
-# Misc
-.ipynb_checkpoints
-.mypy_cache/
-.dmypy.json
-dmypy.json
+# SSL Certificates (keep configs only)
+nginx/ssl/*.pem
+nginx/ssl/*.key
+nginx/ssl/*.crt
+!nginx/ssl/.gitkeep

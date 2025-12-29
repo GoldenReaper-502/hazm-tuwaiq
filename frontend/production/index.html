@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="HAZM TUWAIQ - The world's most advanced AI-powered safety platform">
+    <title>HAZM TUWAIQ - لوحة التحكم | Dashboard</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark-mode">
+    
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- SIDEBAR -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-shield-halved"></i>
+                <span>HAZM TUWAIQ</span>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="#dashboard" class="nav-item active" data-page="dashboard">
+                <i class="fas fa-chart-line"></i>
+                <span>لوحة التحكم</span>
+                <span class="badge">Live</span>
+            </a>
+            
+            <a href="#cameras" class="nav-item" data-page="cameras">
+                <i class="fas fa-video"></i>
+                <span>الكاميرات</span>
+                <span class="badge">8</span>
+            </a>
+            
+            <a href="#alerts" class="nav-item" data-page="alerts">
+                <i class="fas fa-bell"></i>
+                <span>التنبيهات</span>
+                <span class="badge danger">5</span>
+            </a>
+            
+            <a href="#predictions" class="nav-item" data-page="predictions">
+                <i class="fas fa-brain"></i>
+                <span>التنبؤات</span>
+            </a>
+            
+            <a href="#heatmap" class="nav-item" data-page="heatmap">
+                <i class="fas fa-fire"></i>
+                <span>خريطة المخاطر</span>
+            </a>
+            
+            <a href="#twins" class="nav-item" data-page="twins">
+                <i class="fas fa-cube"></i>
+                <span>التوأم الرقمي</span>
+            </a>
+            
+            <a href="#incidents" class="nav-item" data-page="incidents">
+                <i class="fas fa-triangle-exclamation"></i>
+                <span>الحوادث</span>
+            </a>
+            
+            <a href="#analytics" class="nav-item" data-page="analytics">
+                <i class="fas fa-chart-pie"></i>
+                <span>التحليلات</span>
+            </a>
+            
+            <a href="#reports" class="nav-item" data-page="reports">
+                <i class="fas fa-file-pdf"></i>
+                <span>التقارير</span>
+            </a>
+            
+            <a href="#settings" class="nav-item" data-page="settings">
+                <i class="fas fa-gear"></i>
+                <span>الإعدادات</span>
+            </a>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <div class="user-profile">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-info">
+                    <div class="user-name">مدير السلامة</div>
+                    <div class="user-role">Safety Manager</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+    
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- MAIN CONTENT -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <main class="main-content">
+        
+        <!-- TOP BAR -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <h1 class="page-title">لوحة التحكم الرئيسية</h1>
+                <div class="breadcrumb">
+                    <i class="fas fa-home"></i>
+                    <span>الرئيسية</span>
+                    <i class="fas fa-chevron-left"></i>
+                    <span>لوحة التحكم</span>
+                </div>
+            </div>
+            
+            <div class="topbar-right">
+                <!-- Language Toggle -->
+                <button class="icon-button" id="langToggle" title="Toggle Language">
+                    <i class="fas fa-language"></i>
+                </button>
+                
+                <!-- Theme Toggle -->
+                <button class="icon-button" id="themeToggle" title="Toggle Dark/Light Mode">
+                    <i class="fas fa-moon"></i>
+                </button>
+                
+                <!-- Notifications -->
+                <button class="icon-button notification-button" id="notificationBtn">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge">5</span>
+                </button>
+                
+                <!-- Full Screen -->
+                <button class="icon-button" id="fullscreenBtn" title="Full Screen">
+                    <i class="fas fa-expand"></i>
+                </button>
+                
+                <!-- Refresh -->
+                <button class="icon-button" id="refreshBtn" title="Refresh Data">
+                    <i class="fas fa-rotate"></i>
+                </button>
+            </div>
+        </header>
+        
+        <!-- CONTENT AREA -->
+        <div class="content-area" id="contentArea">
+            
+            <!-- DASHBOARD PAGE -->
+            <div class="page active" id="dashboardPage">
+                
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-shield-check"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="safetyScore">87.5</div>
+                            <div class="stat-label">مؤشر السلامة</div>
+                            <div class="stat-change positive">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>+5.2%</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="activeCameras">8/12</div>
+                            <div class="stat-label">كاميرات نشطة</div>
+                            <div class="stat-change neutral">
+                                <i class="fas fa-circle"></i>
+                                <span>Online</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="activeAlerts">5</div>
+                            <div class="stat-label">تنبيهات نشطة</div>
+                            <div class="stat-change negative">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>+2</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="activeWorkers">142</div>
+                            <div class="stat-label">عمال نشطون</div>
+                            <div class="stat-change positive">
+                                <i class="fas fa-check"></i>
+                                <span>98% PPE</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Main Grid -->
+                <div class="dashboard-grid">
+                    
+                    <!-- Live Alerts Panel -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3>
+                                <i class="fas fa-bell"></i>
+                                التنبيهات الحية
+                            </h3>
+                            <button class="panel-action">عرض الكل</button>
+                        </div>
+                        <div class="panel-body">
+                            <div class="alerts-list" id="alertsList">
+                                <!-- Alerts will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Real-time Chart -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3>
+                                <i class="fas fa-chart-line"></i>
+                                الإحصائيات الفورية
+                            </h3>
+                            <div class="chart-controls">
+                                <button class="chart-control active" data-period="hour">ساعة</button>
+                                <button class="chart-control" data-period="day">يوم</button>
+                                <button class="chart-control" data-period="week">أسبوع</button>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <canvas id="realtimeChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Camera Grid -->
+                    <div class="panel full-width">
+                        <div class="panel-header">
+                            <h3>
+                                <i class="fas fa-video"></i>
+                                شبكة الكاميرات
+                            </h3>
+                            <div class="view-controls">
+                                <button class="view-btn active" data-view="grid">
+                                    <i class="fas fa-grid"></i>
+                                </button>
+                                <button class="view-btn" data-view="list">
+                                    <i class="fas fa-list"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="camera-grid" id="cameraGrid">
+                                <!-- Cameras will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Risk Prediction -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3>
+                                <i class="fas fa-brain"></i>
+                                توقعات المخاطر
+                            </h3>
+                        </div>
+                        <div class="panel-body">
+                            <div class="prediction-card">
+                                <div class="prediction-header">
+                                    <span class="prediction-label">احتمالية الحوادث - 24 ساعة القادمة</span>
+                                    <span class="prediction-value high">68%</span>
+                                </div>
+                                <div class="prediction-bar">
+                                    <div class="prediction-fill" style="width: 68%"></div>
+                                </div>
+                                <div class="prediction-factors">
+                                    <div class="factor">
+                                        <i class="fas fa-triangle-exclamation"></i>
+                                        <span>ارتفاع معدل الإرهاق</span>
+                                    </div>
+                                    <div class="factor">
+                                        <i class="fas fa-clock"></i>
+                                        <span>وردية مسائية</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Incidents -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3>
+                                <i class="fas fa-history"></i>
+                                الحوادث الأخيرة
+                            </h3>
+                        </div>
+                        <div class="panel-body">
+                            <div class="incidents-timeline" id="incidentsTimeline">
+                                <!-- Timeline will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <!-- Other pages will be loaded dynamically -->
+            
+        </div>
+    </main>
+    
+    <!-- Notification Dropdown -->
+    <div class="notification-dropdown" id="notificationDropdown">
+        <div class="notification-header">
+            <h4>الإشعارات</h4>
+            <button class="mark-read">تعليم الكل كمقروء</button>
+        </div>
+        <div class="notification-list">
+            <!-- Notifications will be loaded here -->
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>

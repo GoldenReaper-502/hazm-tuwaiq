@@ -3,19 +3,35 @@ uvicorn[standard]>=0.27
 python-multipart>=0.0.9
 python-dotenv>=1.0.0
 pydantic>=2
+pydantic[email]>=2  # Email validation
 requests>=2.31
 
-# AI and ML
-ultralytics>=8.0.0
+# Authentication & Security
+bcrypt>=4.1.0  # Password hashing
+pyjwt>=2.8.0  # JWT tokens
+
+# AI and ML - Real Computer Vision
+ultralytics>=8.0.0  # YOLOv8 for object detection and pose estimation
 typing-extensions>=4.7.1
-openai>=0.27.0
-anthropic>=0.32.0
+openai>=0.27.0  # LLM integration
+anthropic>=0.32.0  # Claude integration
+torch>=2.0.0  # Required for YOLOv8
+torchvision>=0.15.0  # Required for YOLOv8
+
+# Advanced CV - Fatigue Detection
+mediapipe>=0.10.9  # Face mesh for fatigue detection
+scipy>=1.11.0  # Scientific computing
 
 # Image processing
-opencv-python-headless>=4.9
+opencv-python-headless>=4.9  # OpenCV for video processing
 pillow>=10
 numpy>=1.26
 
+# Video Streaming - CCTV Support
+av>=10.0.0  # Video decoding
+ffmpeg-python>=0.2.0  # FFmpeg wrapper
+
 # Report generation
-reportlab
-openpyxl
+reportlab>=4.0.0  # PDF generation
+openpyxl>=3.1.0  # Excel export
+APScheduler>=3.10.0  # Report scheduling

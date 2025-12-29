@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - HAZM TUWAIQ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f7fafc;
+            color: #2d3748;
+        }
+
+        /* Header */
+        .dashboard-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 40px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-logo {
+            font-size: 32px;
+        }
+
+        .header-info h1 {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .header-info p {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-info {
+            text-align: left;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .user-role {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .logout-button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .logout-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Main Container */
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 40px;
+        }
+
+        /* Welcome Card */
+        .welcome-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-right: 5px solid #667eea;
+        }
+
+        .welcome-message {
+            font-size: 24px;
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .priority-message {
+            font-size: 16px;
+            color: #4a5568;
+            line-height: 1.6;
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border-right: 3px solid #f6ad55;
+        }
+
+        .priority-label {
+            font-weight: 600;
+            color: #f6ad55;
+            margin-left: 8px;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            margin-top: 30px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #2d3748;
+        }
+
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .action-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .action-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
+        }
+
+        .action-icon {
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+
+        .action-title {
+            font-weight: 600;
+            font-size: 15px;
+            color: #2d3748;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #718096;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .stat-trend {
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .trend-up {
+            color: #48bb78;
+        }
+
+        .trend-down {
+            color: #f56565;
+        }
+
+        /* Permissions Badge */
+        .permissions-section {
+            margin-top: 30px;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .permissions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .permission-badge {
+            background: #edf2f7;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #4a5568;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .permission-badge::before {
+            content: '✓';
+            color: #48bb78;
+            font-weight: bold;
+        }
+
+        /* Loading Spinner */
+        .loading-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Role-specific colors */
+        .role-owner { border-right-color: #9f7aea; }
+        .role-manager { border-right-color: #4299e1; }
+        .role-supervisor { border-right-color: #48bb78; }
+        .role-worker { border-right-color: #ed8936; }
+        .role-viewer { border-right-color: #718096; }
+
+        @media (max-width: 768px) {
+            .dashboard-header {
+                padding: 15px 20px;
+            }
+
+            .dashboard-container {
+                padding: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .actions-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="dashboard-header">
+        <div class="header-brand">
+            <div class="header-logo">🌌</div>
+            <div class="header-info">
+                <h1>HAZM TUWAIQ</h1>
+                <p>Before ≠ After</p>
+            </div>
+        </div>
+        <div class="header-user">
+            <div class="user-info">
+                <div class="user-name" id="userName">جاري التحميل...</div>
+                <div class="user-role" id="userRole"></div>
+            </div>
+            <button class="logout-button" onclick="logout()">تسجيل الخروج</button>
+        </div>
+    </header>
+
+    <!-- Main Dashboard -->
+    <div class="dashboard-container">
+        <div id="loadingState" class="loading-container">
+            <div class="spinner"></div>
+        </div>
+
+        <div id="dashboardContent" style="display: none;">
+            <!-- Welcome Card -->
+            <div class="welcome-card" id="welcomeCard">
+                <div class="welcome-message" id="welcomeMessage"></div>
+                <div class="priority-message">
+                    <span class="priority-label">🎯 أولوية اليوم:</span>
+                    <span id="priorityMessage"></span>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="stats-grid" id="statsGrid">
+                <!-- Stats will be inserted dynamically -->
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <h2 class="section-title">⚡ إجراءات سريعة</h2>
+                <div class="actions-grid" id="actionsGrid">
+                    <!-- Actions will be inserted dynamically -->
+                </div>
+            </div>
+
+            <!-- Permissions -->
+            <div class="permissions-section">
+                <h2 class="section-title">🔐 الصلاحيات المتاحة</h2>
+                <div class="permissions-grid" id="permissionsGrid">
+                    <!-- Permissions will be inserted dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let currentUser = null;
+
+        // Check authentication on load
+        window.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('hazm_token');
+            
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/dashboard`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Unauthorized');
+                }
+
+                const data = await response.json();
+                currentUser = data;
+                renderDashboard(data);
+            } catch (error) {
+                console.error('Dashboard error:', error);
+                localStorage.removeItem('hazm_token');
+                localStorage.removeItem('hazm_user');
+                window.location.href = '/login.html';
+            }
+        });
+
+        // Render dashboard based on user role
+        function renderDashboard(data) {
+            // Hide loading, show content
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('dashboardContent').style.display = 'block';
+
+            // Set user info
+            document.getElementById('userName').textContent = data.user.full_name;
+            document.getElementById('userRole').textContent = getRoleDisplayName(data.role);
+
+            // Set welcome message
+            document.getElementById('welcomeMessage').textContent = data.welcome_message;
+            document.getElementById('priorityMessage').textContent = data.priority;
+
+            // Apply role-specific styling
+            const welcomeCard = document.getElementById('welcomeCard');
+            welcomeCard.classList.add(`role-${data.role}`);
+
+            // Render statistics
+            renderStats(data.role);
+
+            // Render quick actions
+            renderQuickActions(data.quick_actions);
+
+            // Render permissions
+            renderPermissions(data.permissions);
+        }
+
+        // Get role display name in Arabic
+        function getRoleDisplayName(role) {
+            const roleNames = {
+                'owner': 'صاحب المنصة',
+                'manager': 'مدير العمليات',
+                'supervisor': 'مشرف الموقع',
+                'worker': 'عامل',
+                'viewer': 'مراقب'
+            };
+            return roleNames[role] || role;
+        }
+
+        // Render statistics based on role
+        function renderStats(role) {
+            const statsGrid = document.getElementById('statsGrid');
+            let stats = [];
+
+            if (role === 'owner') {
+                stats = [
+                    { label: 'إجمالي المواقع', value: '12', trend: '+2 هذا الشهر', trendClass: 'trend-up' },
+                    { label: 'المستخدمون النشطون', value: '347', trend: '+23 جديد', trendClass: 'trend-up' },
+                    { label: 'التنبيهات اليوم', value: '8', trend: '-12 من الأمس', trendClass: 'trend-up' },
+                    { label: 'نسبة السلامة', value: '94%', trend: '+3% هذا الأسبوع', trendClass: 'trend-up' },
+                ];
+            } else if (role === 'manager') {
+                stats = [
+                    { label: 'المواقع المدارة', value: '3', trend: 'جميعها نشطة', trendClass: 'trend-up' },
+                    { label: 'العمال النشطون', value: '156', trend: '98% حاضرون', trendClass: 'trend-up' },
+                    { label: 'التنبيهات النشطة', value: '5', trend: 'منخفضة', trendClass: 'trend-up' },
+                    { label: 'الامتثال', value: '92%', trend: '+2%', trendClass: 'trend-up' },
+                ];
+            } else if (role === 'supervisor') {
+                stats = [
+                    { label: 'الموقع', value: 'موقع A', trend: 'نشط الآن', trendClass: 'trend-up' },
+                    { label: 'العمال الحاليون', value: '48', trend: 'جميعهم آمنون', trendClass: 'trend-up' },
+                    { label: 'التنبيهات اليوم', value: '3', trend: 'تحت المتابعة', trendClass: 'trend-up' },
+                    { label: 'المعدات', value: '12', trend: 'كلها سليمة', trendClass: 'trend-up' },
+                ];
+            } else if (role === 'worker') {
+                stats = [
+                    { label: 'حالة السلامة', value: 'آمن', trend: 'ممتاز', trendClass: 'trend-up' },
+                    { label: 'التدريبات', value: '85%', trend: '3 متبقية', trendClass: 'trend-up' },
+                    { label: 'ساعات العمل', value: '6.5', trend: 'اليوم', trendClass: 'trend-up' },
+                    { label: 'النقاط', value: '342', trend: '+15 اليوم', trendClass: 'trend-up' },
+                ];
+            } else {
+                stats = [
+                    { label: 'التقارير', value: '24', trend: 'متاحة', trendClass: 'trend-up' },
+                    { label: 'البيانات', value: '100%', trend: 'محدثة', trendClass: 'trend-up' },
+                    { label: 'المؤشرات', value: '18', trend: 'نشطة', trendClass: 'trend-up' },
+                    { label: 'الوصول', value: 'قراءة فقط', trend: '', trendClass: '' },
+                ];
+            }
+
+            statsGrid.innerHTML = stats.map(stat => `
+                <div class="stat-card">
+                    <div class="stat-label">${stat.label}</div>
+                    <div class="stat-value">${stat.value}</div>
+                    ${stat.trend ? `<div class="stat-trend ${stat.trendClass}">${stat.trend}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // Render quick actions
+        function renderQuickActions(actions) {
+            const actionsGrid = document.getElementById('actionsGrid');
+            const actionIcons = ['📊', '🚨', '📝', '⚙️', '👥', '📹', '🔍', '💡'];
+
+            actionsGrid.innerHTML = actions.map((action, index) => `
+                <div class="action-card" onclick="performAction('${action}')">
+                    <div class="action-icon">${actionIcons[index % actionIcons.length]}</div>
+                    <div class="action-title">${action}</div>
+                </div>
+            `).join('');
+        }
+
+        // Render permissions
+        function renderPermissions(permissions) {
+            const permissionsGrid = document.getElementById('permissionsGrid');
+            
+            const permissionNames = {
+                'view_dashboard': 'عرض لوحة التحكم',
+                'view_analytics': 'عرض التحليلات',
+                'view_workers': 'عرض العمال',
+                'manage_workers': 'إدارة العمال',
+                'view_sites': 'عرض المواقع',
+                'manage_sites': 'إدارة المواقع',
+                'view_cameras': 'عرض الكاميرات',
+                'manage_cameras': 'إدارة الكاميرات',
+                'view_alerts': 'عرض التنبيهات',
+                'manage_alerts': 'إدارة التنبيهات',
+                'respond_incidents': 'الاستجابة للحوادث',
+                'view_reports': 'عرض التقارير',
+                'generate_reports': 'توليد التقارير',
+                'export_reports': 'تصدير التقارير',
+                'view_predictions': 'عرض التنبؤات',
+                'configure_ai': 'تكوين الذكاء الاصطناعي',
+                'manage_users': 'إدارة المستخدمين',
+                'manage_roles': 'إدارة الأدوار',
+                'manage_organization': 'إدارة المنظمة',
+                'view_audit_logs': 'عرض سجلات التدقيق',
+            };
+
+            permissionsGrid.innerHTML = permissions.map(perm => `
+                <div class="permission-badge">
+                    ${permissionNames[perm] || perm}
+                </div>
+            `).join('');
+        }
+
+        // Perform action (placeholder)
+        function performAction(action) {
+            alert(`سيتم تنفيذ: ${action}\n\nهذه الميزة قيد التطوير النهائي`);
+        }
+
+        // Logout function
+        async function logout() {
+            const token = localStorage.getItem('hazm_token');
+            
+            if (token) {
+                try {
+                    await fetch(`${API_BASE}/api/auth/logout`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                } catch (error) {
+                    console.error('Logout error:', error);
+                }
+            }
+
+            localStorage.removeItem('hazm_token');
+            localStorage.removeItem('hazm_user');
+            window.location.href = '/login.html';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول - HAZM TUWAIQ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            max-width: 1000px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .login-brand {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 60px 40px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .brand-logo {
+            font-size: 72px;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .brand-name {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .brand-tagline {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .brand-features {
+            text-align: right;
+            width: 100%;
+            margin-top: 30px;
+        }
+
+        .brand-feature {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 14px;
+            opacity: 0.95;
+        }
+
+        .brand-feature span {
+            margin-left: 10px;
+            font-size: 20px;
+        }
+
+        .login-form-section {
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-header {
+            margin-bottom: 40px;
+        }
+
+        .form-header h2 {
+            font-size: 28px;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .form-header p {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4a5568;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .login-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .login-button:active {
+            transform: translateY(0);
+        }
+
+        .login-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .success-message {
+            background: #efe;
+            border: 1px solid #cfc;
+            color: #3c3;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .demo-credentials {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 8px;
+            border-right: 4px solid #667eea;
+        }
+
+        .demo-credentials h4 {
+            color: #2d3748;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .demo-role {
+            margin-bottom: 10px;
+            font-size: 13px;
+            color: #4a5568;
+        }
+
+        .demo-role strong {
+            color: #667eea;
+            cursor: pointer;
+        }
+
+        .demo-role strong:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .login-container {
+                grid-template-columns: 1fr;
+            }
+
+            .login-brand {
+                padding: 40px 30px;
+            }
+
+            .brand-logo {
+                font-size: 56px;
+            }
+
+            .brand-name {
+                font-size: 28px;
+            }
+
+            .brand-features {
+                display: none;
+            }
+        }
+
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <!-- Brand Section -->
+        <div class="login-brand">
+            <div class="brand-logo">🌌</div>
+            <h1 class="brand-name">HAZM TUWAIQ</h1>
+            <p class="brand-tagline">
+                منصة السلامة الذكية مع وعي سياقي كامل<br>
+                Before HAZM TUWAIQ ≠ After HAZM TUWAIQ
+            </p>
+
+            <div class="brand-features">
+                <div class="brand-feature">
+                    <span>🔍</span>
+                    <span>كشف الأخطار بالذكاء الاصطناعي</span>
+                </div>
+                <div class="brand-feature">
+                    <span>🔮</span>
+                    <span>التنبؤ بالحوادث قبل وقوعها</span>
+                </div>
+                <div class="brand-feature">
+                    <span>🤖</span>
+                    <span>استجابة ذاتية فورية</span>
+                </div>
+                <div class="brand-feature">
+                    <span>📊</span>
+                    <span>تقارير متقدمة وذكية</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Form Section -->
+        <div class="login-form-section">
+            <div class="form-header">
+                <h2>مرحباً بعودتك</h2>
+                <p>قم بتسجيل الدخول للوصول إلى لوحة التحكم</p>
+            </div>
+
+            <div id="errorMessage" class="error-message"></div>
+            <div id="successMessage" class="success-message"></div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label" for="username">اسم المستخدم</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        class="form-input" 
+                        placeholder="أدخل اسم المستخدم"
+                        required
+                        autocomplete="username"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">كلمة المرور</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        class="form-input" 
+                        placeholder="أدخل كلمة المرور"
+                        required
+                        autocomplete="current-password"
+                    >
+                </div>
+
+                <button type="submit" id="loginButton" class="login-button">
+                    تسجيل الدخول
+                </button>
+            </form>
+
+            <!-- Demo Credentials -->
+            <div class="demo-credentials">
+                <h4>🎭 حسابات تجريبية (للاختبار):</h4>
+                <div class="demo-role">
+                    <strong onclick="fillCredentials('owner', 'owner123')">صاحب المنصة</strong>: owner / owner123
+                </div>
+                <div class="demo-role">
+                    <strong onclick="fillCredentials('manager', 'manager123')">المدير</strong>: manager / manager123
+                </div>
+                <div class="demo-role">
+                    <strong onclick="fillCredentials('supervisor', 'supervisor123')">المشرف</strong>: supervisor / supervisor123
+                </div>
+                <div class="demo-role">
+                    <strong onclick="fillCredentials('worker', 'worker123')">العامل</strong>: worker / worker123
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        // Fill demo credentials
+        function fillCredentials(username, password) {
+            document.getElementById('username').value = username;
+            document.getElementById('password').value = password;
+        }
+
+        // Show error message
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+            setTimeout(() => errorEl.classList.remove('show'), 5000);
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            const successEl = document.getElementById('successMessage');
+            successEl.textContent = message;
+            successEl.classList.add('show');
+        }
+
+        // Handle login form submission
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const button = document.getElementById('loginButton');
+
+            if (!username || !password) {
+                showError('الرجاء إدخال اسم المستخدم وكلمة المرور');
+                return;
+            }
+
+            // Disable button and show loading
+            button.disabled = true;
+            button.innerHTML = '<span class="loading-spinner"></span>جاري تسجيل الدخول...';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
+
+                const data = await response.json();
+
+                if (data.success && data.token) {
+                    // Store token
+                    localStorage.setItem('hazm_token', data.token);
+                    localStorage.setItem('hazm_user', JSON.stringify(data.user));
+
+                    // Show success and redirect
+                    showSuccess(`${data.message} - جاري التوجيه...`);
+                    
+                    setTimeout(() => {
+                        window.location.href = '/dashboard.html';
+                    }, 1000);
+                } else {
+                    showError(data.message || 'فشل تسجيل الدخول');
+                    button.disabled = false;
+                    button.innerHTML = 'تسجيل الدخول';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('حدث خطأ أثناء الاتصال بالخادم');
+                button.disabled = false;
+                button.innerHTML = 'تسجيل الدخول';
+            }
+        });
+
+        // Check if already logged in
+        window.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('hazm_token');
+            if (token) {
+                // Verify token is still valid
+                fetch(`${API_BASE}/api/auth/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        window.location.href = '/dashboard.html';
+                    } else {
+                        localStorage.removeItem('hazm_token');
+                        localStorage.removeItem('hazm_user');
+                    }
+                }).catch(() => {
+                    localStorage.removeItem('hazm_token');
+                    localStorage.removeItem('hazm_user');
+                });
+            }
+        });
+    </script>
+</body>
+</html>
