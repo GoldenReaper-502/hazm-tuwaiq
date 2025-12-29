@@ -4,11 +4,9 @@ WORKDIR /app
 
 ENV PYTHONUNBUFFERED=1
 
-# System dependencies (minimal - avoid apt failures)
+# System dependencies (minimal - only what's needed for healthcheck)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
