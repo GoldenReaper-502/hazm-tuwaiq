@@ -69,6 +69,25 @@ function pretty(obj) {
   return JSON.stringify(obj, null, 2);
 }
 
+// ====== Safe Fetch Helper ======
+async function safeFetchJson(url, options = {}) {
+  try {
+    const res = await fetch(url, options);
+    const text = await res.text();
+    
+    try {
+      const json = JSON.parse(text);
+      return { ok: res.ok, status: res.status, json: json, raw: text };
+    } catch (e) {
+      // Not JSON - return HTML/text as raw
+      return { ok: res.ok, status: res.status, json: null, raw: text };
+    }
+  } catch (fetchError) {
+    // Network error
+    return { ok: false, status: 0, json: null, raw: null, error: fetchError.message };
+  }
+}
+
 // ====== Camera Management ======
 class CameraManager {
   constructor() {
@@ -535,33 +554,41 @@ class ChatManager {
 async function loadHealth() {
   const { apiUrl } = getCfg();
   $("statusOut").textContent = "جارِ الاتصال...";
+  
   try {
-    let res = await fetch(`${apiUrl}/`, { 
+    // Try /health first
+    let result = await safeFetchJson(`${apiUrl}/health`, { 
       headers: headersAny(),
       mode: 'cors'
     });
     
-    if (!res.ok) {
-      res = await fetch(`${apiUrl}/health`, {
+    // If /health failed, try root
+    if (!result.ok || !result.json) {
+      result = await safeFetchJson(`${apiUrl}/`, { 
         headers: headersAny(),
         mode: 'cors'
       });
     }
     
-    const contentType = res.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-      const text = await res.text();
+    // Handle fetch errors
+    if (result.error) {
+      throw new Error(`Failed to fetch: ${result.error}`);
+    }
+    
+    // Handle non-JSON responses
+    if (!result.json) {
+      const text = result.raw || "No response";
       
-      // Check if it's a Render "Not Found" error
       if (text.includes("Not Found") && apiUrl.includes("render.com")) {
         throw new Error(`⚠️ Backend غير موجود على Render!\n\nيجب نشر المشروع على Render أولاً:\n1. اذهب إلى https://dashboard.render.com\n2. اضغط New + → Blueprint\n3. اختر المستودع: GoldenReaper-502/hazm-tuwaiq\n4. اضغط Apply\n\nأو استخدم Backend المحلي:\nغيّر API URL في الإعدادات إلى: http://localhost:8000`);
       }
       
-      throw new Error(`Backend لا يرد بـ JSON.\n\nالاستجابة: ${text.substring(0, 200)}`);
+      throw new Error(`Backend لا يرد بـ JSON (Status: ${result.status}).\n\nالاستجابة: ${text.substring(0, 200)}`);
     }
     
-    const data = await res.json();
-    $("statusOut").textContent = pretty(data);
+    // Success - show JSON
+    $("statusOut").textContent = pretty(result.json);
+    
   } catch (e) {
     let errorMsg = `خطأ: ${e.message}\n\n`;
     

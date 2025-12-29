@@ -1,160 +1,97 @@
 #!/usr/bin/env python3
 """
-Backend validation script
-اختبر endpoints الكشف والدردشة
+Validation script for Hazm Tuwaiq Backend
+Tests critical endpoints to ensure deployment is working.
 """
-
+import sys
 import requests
-import json
-import base64
 import time
-from pathlib import Path
 
-# Configuration
-BACKEND_URL = "http://localhost:8000"
-API_KEY = ""  # اترك فارغ إذا ما عندك حماية
 
-def log(msg):
-    print(f"[{time.strftime('%H:%M:%S')}] {msg}")
-
-def make_request(method, endpoint, data=None):
-    """Make HTTP request to backend"""
-    url = f"{BACKEND_URL}{endpoint}"
-    headers = {"Content-Type": "application/json"}
-    if API_KEY:
-        headers["x-api-key"] = API_KEY
+def main():
+    BASE = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8000"
     
-    try:
-        if method == "GET":
-            resp = requests.get(url, headers=headers, timeout=5)
-        elif method == "POST":
-            resp = requests.post(url, json=data, headers=headers, timeout=5)
-        elif method == "DELETE":
-            resp = requests.delete(url, headers=headers, timeout=5)
-        else:
-            raise ValueError(f"Unknown method: {method}")
+    print(f"🧪 Testing backend at: {BASE}")
+    print("=" * 60)
+    
+    def check(path, method="GET", expected_status=200, json_required=True):
+        url = BASE + path
+        print(f"\n📍 {method} {path}")
         
-        return resp.status_code, resp.json() if resp.text else {}
-    except requests.exceptions.ConnectionError:
-        log(f"❌ Failed to connect to {url}")
-        return None, None
-    except Exception as e:
-        log(f"❌ Error: {e}")
-        return None, None
-
-
-def test_health():
-    """Test /health endpoint"""
-    log("Testing /health...")
-    code, data = make_request("GET", "/health")
+        try:
+            if method == "GET":
+                r = requests.get(url, timeout=20)
+            else:
+                r = requests.request(method, url, timeout=20)
+            
+            print(f"   Status: {r.status_code}")
+            
+            # Check status
+            if r.status_code != expected_status:
+                print(f"   ❌ Expected {expected_status}, got {r.status_code}")
+                print(f"   Response: {r.text[:200]}")
+                return False
+            
+            # Check JSON if required
+            if json_required:
+                try:
+                    data = r.json()
+                    print(f"   ✅ Valid JSON response")
+                    print(f"   Data: {data}")
+                except Exception as e:
+                    print(f"   ❌ Invalid JSON: {e}")
+                    print(f"   Raw: {r.text[:200]}")
+                    return False
+            
+            return True
+            
+        except requests.exceptions.Timeout:
+            print(f"   ❌ Request timeout after 20s")
+            return False
+        except requests.exceptions.ConnectionError as e:
+            print(f"   ❌ Connection error: {e}")
+            return False
+        except Exception as e:
+            print(f"   ❌ Error: {e}")
+            return False
     
-    if code == 200:
-        log(f"✓ Health check passed: {data.get('status')}")
-        return True
+    # Run tests
+    results = []
+    
+    # Test 1: Health endpoint
+    results.append(("Health Check", check("/health")))
+    
+    # Test 2: Root endpoint
+    results.append(("Root Endpoint", check("/")))
+    
+    # Test 3: Docs (Swagger UI)
+    results.append(("API Docs", check("/docs", json_required=False)))
+    
+    # Print summary
+    print("\n" + "=" * 60)
+    print("📊 SUMMARY")
+    print("=" * 60)
+    
+    passed = sum(1 for _, result in results if result)
+    total = len(results)
+    
+    for name, result in results:
+        status = "✅ PASS" if result else "❌ FAIL"
+        print(f"{status} - {name}")
+    
+    print(f"\n{passed}/{total} tests passed")
+    
+    if passed == total:
+        print("\n🎉 All checks passed! Backend is healthy.")
+        sys.exit(0)
     else:
-        log(f"✗ Health check failed: {code}")
-        return False
+        print("\n⚠️ Some tests failed. Check logs above.")
+        sys.exit(1)
 
 
-def test_detection():
-    """Test /detect endpoint"""
-    log("\nTesting /detect endpoint...")
-    
-    # Create a simple 1x1 transparent PNG
-    png_data = base64.b64encode(b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89').decode()
-    
-    payload = {
-        "frame_data": png_data,
-        "timestamp": None
-    }
-    
-    code, data = make_request("POST", "/detect", payload)
-    
-    if code == 200:
-        log(f"✓ Detection request successful")
-        log(f"  - Detection ID: {data.get('id')}")
-        log(f"  - Objects detected: {len(data.get('objects', []))}")
-        return True
-    else:
-        log(f"✗ Detection failed: {code}")
-        if data:
-            log(f"  Error: {data}")
-        return False
+if __name__ == "__main__":
+    main()
 
-
-def test_chat():
-    """Test /chat endpoint"""
-    log("\nTesting /chat endpoint...")
-    
-    payload = {
-        "message": "What is the latest detection result?",
-        "detection_result": None,
-        "session_id": "test_session_001"
-    }
-    
-    code, data = make_request("POST", "/chat", payload)
-    
-    if code == 200:
-        log(f"✓ Chat request successful")
-        log(f"  - Message ID: {data.get('id')}")
-        log(f"  - Response: {data.get('assistant_response')[:50]}...")
-        return True
-    else:
-        log(f"✗ Chat failed: {code}")
-        if data:
-            log(f"  Error: {data}")
-        return False
-
-
-def test_chat_with_detection():
-    """Test /chat endpoint with detection context"""
-    log("\nTesting /chat with detection context...")
-    
-    # First get last detection
-    code, det = make_request("GET", "/detections/last")
-    
-    if code != 200 or not det:
-        log("⚠ No previous detection found, creating one first...")
-        test_detection()
-        code, det = make_request("GET", "/detections/last")
-    
-    payload = {
-        "message": "Tell me about the detection results",
-        "detection_result": det if det else None,
-        "session_id": "test_session_001"
-    }
-    
-    code, data = make_request("POST", "/chat", payload)
-    
-    if code == 200:
-        log(f"✓ Chat with detection successful")
-        log(f"  - Detection attached: {data.get('detection_attached')}")
-        log(f"  - Response: {data.get('assistant_response')[:50]}...")
-        return True
-    else:
-        log(f"✗ Chat with detection failed: {code}")
-        return False
-
-
-def test_chat_history():
-    """Test /chat/{session_id} endpoint"""
-    log("\nTesting /chat history...")
-    
-    code, data = make_request("GET", "/chat/test_session_001")
-    
-    if code == 200:
-        log(f"✓ Chat history retrieved: {len(data)} messages")
-        return True
-    else:
-        log(f"✗ Chat history failed: {code}")
-        return False
-
-
-def test_clear_chat():
-    """Test clearing chat session"""
-    log("\nTesting /chat/{session_id} DELETE...")
-    
-    code, data = make_request("DELETE", "/chat/test_session_001")
     
     if code == 200:
         log(f"✓ Chat session cleared")

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="2;url=index.html">
+    <title>إصلاح الإعدادات...</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1a2332 0%, #2d3e50 100%);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .success {
+            font-size: 64px;
+            margin-bottom: 20px;
+            animation: bounce 0.6s;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        h1 { margin: 0 0 10px 0; }
+        p { color: #a0d0ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success">✅</div>
+        <h1>تم إصلاح الإعدادات!</h1>
+        <p id="status">جارٍ إعادة التوجيه...</p>
+    </div>
+    
+    <script>
+        // Fix settings
+        localStorage.setItem('hazm_api_url', 'http://localhost:8000');
+        localStorage.removeItem('hazm_api_key');
+        
+        document.getElementById('status').innerHTML = `
+            تم ضبط API URL إلى: <strong>http://localhost:8000</strong><br>
+            سيتم إعادة التوجيه إلى التطبيق خلال ثانيتين...
+        `;
+        
+        console.log('✅ Settings fixed!');
+        console.log('API URL:', localStorage.getItem('hazm_api_url'));
+    </script>
+</body>
+</html>

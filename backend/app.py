@@ -333,9 +333,10 @@ def root():
     )
 
 
-@app.get("/health", response_model=HealthResponse)
+@app.get("/health")
 def health():
-    return root()
+    """Health check endpoint - returns simple JSON for monitoring"""
+    return {"status": "ok"}
 
 
 # =========================
