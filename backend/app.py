@@ -57,10 +57,10 @@ app = FastAPI(title=APP_NAME, version=APP_VERSION)
 
 load_dotenv()
 
-# CORS configuration from env or default to local dev origins
-cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000").split(",")
+# CORS configuration from env or default to allow all origins
+cors_origins = os.getenv("CORS_ORIGINS", "*").split(",")
 cors_origins = [o.strip() for o in cors_origins if o.strip()]
-if not cors_origins:
+if not cors_origins or cors_origins == ["*"]:
     cors_origins = ["*"]
 
 app.add_middleware(
@@ -73,30 +73,38 @@ app.add_middleware(
 
 
 @app.on_event("startup")
-def startup_event():
-    """Initialize heavy resources at startup (YOLO model)."""
-    try:
-        model = ai_engine.init_model()
-        if model is not None:
-            logger.info("AI engine: YOLO model loaded at startup")
-        else:
-            logger.warning("AI engine: YOLO model not available (using mock)")
-    except Exception as e:
-        logger.exception(f"AI engine init failed: {e}")
+async def startup_event():
+    """Initialize heavy resources at startup (YOLO model) with optimized loading."""
+    import asyncio
+    
+    # Initialize AI engine in background to avoid blocking startup
+    async def init_ai():
+        try:
+            await run_in_threadpool(ai_engine.init_model)
+            logger.info("AI engine: YOLO model loaded successfully")
+        except Exception as e:
+            logger.exception(f"AI engine init failed: {e}")
+    
+    # Initialize CCTV manager in background
+    async def init_cctv():
+        try:
+            mgr = cctv.get_manager()
+            cams = mgr.list_cameras()
+            for cam in cams:
+                try:
+                    if cam.get("enabled"):
+                        mgr.start_camera(cam.get("id"))
+                        logger.info(f"Started camera: {cam.get('id')}")
+                except Exception as ce:
+                    logger.warning(f"Failed to start camera {cam.get('id')}: {ce}")
+        except Exception as e:
+            logger.exception(f"CCTV manager init failed: {e}")
+    
+    # Run initializations in parallel
+    asyncio.create_task(init_ai())
+    asyncio.create_task(init_cctv())
+    logger.info("Backend startup initiated - loading resources in background")
 
-    # Initialize CCTV manager and start enabled cameras (best-effort)
-    try:
-        mgr = cctv.get_manager()
-        cams = mgr.list_cameras()
-        for cam in cams:
-            try:
-                if cam.get("enabled"):
-                    mgr.start_camera(cam.get("id"))
-                    logger.info(f"Started camera at startup: {cam.get('id')}")
-            except Exception as ce:
-                logger.warning(f"Failed to start camera {cam.get('id')}: {ce}")
-    except Exception as e:
-        logger.exception(f"CCTV manager init failed: {e}")
 
 # Reports storage (file-based simple storage)
 STORAGE_DIR = Path(__file__).resolve().parent

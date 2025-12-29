@@ -1,5 +1,8 @@
 // ====== إعدادات ======
-const DEFAULT_API = "http://localhost:8000";
+// Auto-detect API URL based on environment
+const DEFAULT_API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? "http://localhost:8000"
+  : window.location.origin;
 const LS_API = "hazm_api_url";
 const LS_KEY = "hazm_api_key";
 const LS_CHAT_HISTORY = "hazm_chat_history";
