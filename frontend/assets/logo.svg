@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Shield Background -->
+  <path d="M100 10 L170 40 L170 110 C170 140 140 170 100 190 C60 170 30 140 30 110 L30 40 Z" 
+        fill="#0a4d3c" stroke="#fff" stroke-width="2"/>
+  
+  <!-- Mountains -->
+  <path d="M100 60 L70 110 L130 110 Z" fill="#fff"/>
+  <path d="M120 75 L95 110 L145 110 Z" fill="#fff"/>
+  
+  <!-- Orange Corner -->
+  <path d="M145 110 L170 110 L145 135 Z" fill="#ff9800"/>
+</svg>
