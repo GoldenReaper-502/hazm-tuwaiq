@@ -1,8 +1,18 @@
 // ====== إعدادات ======
 // Auto-detect API URL based on environment
-const DEFAULT_API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? "http://localhost:8000"
-  : window.location.origin;
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const isRenderFrontend = window.location.hostname.includes('hazm-frontend') || window.location.hostname.includes('onrender.com');
+
+let DEFAULT_API;
+if (isLocalhost) {
+  DEFAULT_API = "http://localhost:8000";
+} else if (isRenderFrontend) {
+  // On Render, Frontend and Backend are separate services
+  DEFAULT_API = "https://hazm-backend.onrender.com";
+} else {
+  DEFAULT_API = window.location.origin;
+}
+
 const LS_API = "hazm_api_url";
 const LS_KEY = "hazm_api_key";
 const LS_CHAT_HISTORY = "hazm_chat_history";
@@ -15,6 +25,19 @@ function log(msg) {
 }
 
 function $(id) { return document.getElementById(id); }
+
+// ====== Auto-fix Settings ======
+// Reset to localhost if we're on localhost and settings point to Render
+(function autoFixSettings() {
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const savedUrl = localStorage.getItem(LS_API);
+  
+  if (isLocalhost && savedUrl && savedUrl.includes('render.com')) {
+    console.log('[Hazm] Auto-fixing: Resetting API URL to localhost');
+    localStorage.setItem(LS_API, 'http://localhost:8000');
+    localStorage.removeItem(LS_KEY); // Clear API key too
+  }
+})();
 
 // ====== Configuration ======
 function getCfg() {
@@ -266,6 +289,13 @@ class CameraManager {
         return;
       }
 
+      // Check if response is JSON
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        log(`Unexpected response type: ${contentType}`);
+        return;
+      }
+
       const detection = await response.json();
       this.lastDetection = detection;
       
@@ -396,7 +426,14 @@ class ChatManager {
       });
 
       if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 100)}`);
+      }
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text();
+        throw new Error(`توقع JSON لكن استلم: ${text.substring(0, 100)}...`);
       }
 
       const chatResponse = await response.json();
@@ -499,14 +536,28 @@ async function loadHealth() {
   const { apiUrl } = getCfg();
   $("statusOut").textContent = "جارِ الاتصال...";
   try {
-    let res = await fetch(`${apiUrl}/`);
+    let res = await fetch(`${apiUrl}/`, { 
+      headers: headersAny(),
+      mode: 'cors'
+    });
+    
     if (!res.ok) {
-      res = await fetch(`${apiUrl}/health`);
+      res = await fetch(`${apiUrl}/health`, {
+        headers: headersAny(),
+        mode: 'cors'
+      });
     }
+    
+    const contentType = res.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      const text = await res.text();
+      throw new Error(`Backend لا يرد بـ JSON. تحقق من أن الـ Backend يعمل على: ${apiUrl}\n\nالاستجابة: ${text.substring(0, 200)}`);
+    }
+    
     const data = await res.json();
     $("statusOut").textContent = pretty(data);
   } catch (e) {
-    $("statusOut").textContent = `خطأ: ${e.message}`;
+    $("statusOut").textContent = `خطأ: ${e.message}\n\nتحقق من:\n1. Backend يعمل على ${apiUrl}\n2. لا يوجد حظر CORS\n3. الـ URL صحيح`;
   }
 }
 
@@ -515,7 +566,20 @@ async function listIncidents() {
   const { apiUrl } = getCfg();
   $("incidentsWrap").innerHTML = "";
   try {
-    const res = await fetch(`${apiUrl}/incidents`, { headers: headersAny() });
+    const res = await fetch(`${apiUrl}/incidents`, { 
+      headers: headersAny(),
+      mode: 'cors'
+    });
+    
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    
+    const contentType = res.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      throw new Error("استجابة غير صحيحة من Backend");
+    }
+    
     const data = await res.json();
     if (!Array.isArray(data) || data.length === 0) {
       $("incidentsWrap").innerHTML = `<div class="item"><div class="meta">لا يوجد بلاغات</div></div>`;

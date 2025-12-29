@@ -4,15 +4,17 @@ services:
     name: hazm-backend
     runtime: python
     plan: free
-    buildCommand: pip install -r backend/requirements.txt && pip install ultralytics reportlab openpyxl opencv-python-headless pillow numpy
-    startCommand: cd backend && uvicorn app:app --host 0.0.0.0 --port $PORT --workers 1
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && python app.py
     envVars:
       - key: PORT
-        value: "8000"
+        sync: false
       - key: PYTHONUNBUFFERED
         value: "1"
       - key: LOG_LEVEL
         value: "INFO"
+      - key: HOST
+        value: "0.0.0.0"
       - key: YOLO_MODEL
         value: "yolov8n.pt"
       - key: YOLO_CONF

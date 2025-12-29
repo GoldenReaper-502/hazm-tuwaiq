@@ -1275,3 +1275,26 @@ def clear_chat_session(
         logger.info(f"Chat session cleared: {session_id}")
     
     return ApiMessage(message=f"Chat session {session_id} cleared")
+    
+    return ApiMessage(message=f"Chat session {session_id} cleared")
+
+
+# =========================
+# Main entry point
+# =========================
+if __name__ == "__main__":
+    import uvicorn
+    
+    port = int(os.getenv("PORT", 8000))
+    host = os.getenv("HOST", "0.0.0.0")
+    
+    logger.info(f"Starting {APP_NAME} v{APP_VERSION}")
+    logger.info(f"Server will run on {host}:{port}")
+    
+    uvicorn.run(
+        "app:app",
+        host=host,
+        port=port,
+        reload=True,
+        log_level=LOG_LEVEL.lower()
+    )

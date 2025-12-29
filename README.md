@@ -23,31 +23,42 @@
 ### المتطلبات
 
 - Python 3.9+
-- Node.js 14+ (اختياري - للتطوير)
 - متصفح حديث يدعم WebRTC (Chrome, Firefox, Edge, Safari)
 
-### التثبيت والتشغيل
+### ⚡ تشغيل سريع (طريقة سهلة)
+
+```bash
+# 1. تفعيل البيئة الافتراضية
+source .venv/bin/activate
+
+# 2. تشغيل Backend
+./start.sh
+
+# 3. افتح Frontend في متصفحك
+# ملف: frontend/index.html
+```
+
+للإيقاف:
+```bash
+./stop.sh
+```
+
+### 📝 تشغيل يدوي
 
 #### 1. Backend (FastAPI)
 
 ```bash
-cd backend
-
-# نسخ الإعدادات
-cp ../.env.example .env
-# عدّل .env حسب احتياجاتك
-
-# تثبيت المكتبات
-pip install -r requirements.txt
+# تفعيل البيئة الافتراضية
+source .venv/bin/activate
 
 # تشغيل الخادم
-uvicorn app:app --reload --host 0.0.0.0 --port 8000
+python backend/app.py
 
 # سيكون API متاحاً على: http://localhost:8000
 # Docs (Swagger): http://localhost:8000/docs
 ```
 
-#### 2. Frontend (تطوير محلي)
+#### 2. Frontend
 
 **الخيار 1: استخدام Python للتطوير المحلي**
 

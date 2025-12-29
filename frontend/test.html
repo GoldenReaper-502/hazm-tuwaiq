@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>اختبار سريع</title>
+</head>
+<body style="font-family: Arial; padding: 20px; background: #1a2332; color: white;">
+    <h1>🔧 اختبار حالة Backend</h1>
+    <button onclick="testLocal()" style="padding: 10px 20px; margin: 10px; font-size: 16px;">اختبار localhost:8000</button>
+    <button onclick="testRender()" style="padding: 10px 20px; margin: 10px; font-size: 16px;">اختبار Render</button>
+    <button onclick="resetSettings()" style="padding: 10px 20px; margin: 10px; font-size: 16px; background: orange;">إعادة تعيين الإعدادات</button>
+    
+    <pre id="result" style="background: #2a3342; padding: 20px; border-radius: 8px; margin-top: 20px;"></pre>
+    
+    <script>
+        const log = (msg) => {
+            document.getElementById('result').textContent = msg;
+        };
+        
+        async function testLocal() {
+            log('جارِ الاختبار...');
+            try {
+                const res = await fetch('http://localhost:8000/');
+                const data = await res.json();
+                log('✅ Backend المحلي يعمل!\n\n' + JSON.stringify(data, null, 2));
+            } catch (e) {
+                log('❌ خطأ: ' + e.message);
+            }
+        }
+        
+        async function testRender() {
+            log('جارِ الاختبار...');
+            try {
+                const res = await fetch('https://hazm-tuwaiq-l8gc.onrender.com/');
+                const data = await res.json();
+                log('✅ Render Backend يعمل!\n\n' + JSON.stringify(data, null, 2));
+            } catch (e) {
+                log('❌ خطأ: ' + e.message + '\n\nBackend على Render غير متاح حالياً');
+            }
+        }
+        
+        function resetSettings() {
+            localStorage.setItem('hazm_api_url', 'http://localhost:8000');
+            localStorage.removeItem('hazm_api_key');
+            log('✅ تم إعادة تعيين الإعدادات إلى:\nAPI URL: http://localhost:8000\n\nأعد تحميل الصفحة الرئيسية');
+        }
+    </script>
+</body>
+</html>
