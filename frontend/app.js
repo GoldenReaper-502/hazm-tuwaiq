@@ -551,13 +551,39 @@ async function loadHealth() {
     const contentType = res.headers.get("content-type");
     if (!contentType || !contentType.includes("application/json")) {
       const text = await res.text();
-      throw new Error(`Backend لا يرد بـ JSON. تحقق من أن الـ Backend يعمل على: ${apiUrl}\n\nالاستجابة: ${text.substring(0, 200)}`);
+      
+      // Check if it's a Render "Not Found" error
+      if (text.includes("Not Found") && apiUrl.includes("render.com")) {
+        throw new Error(`⚠️ Backend غير موجود على Render!\n\nيجب نشر المشروع على Render أولاً:\n1. اذهب إلى https://dashboard.render.com\n2. اضغط New + → Blueprint\n3. اختر المستودع: GoldenReaper-502/hazm-tuwaiq\n4. اضغط Apply\n\nأو استخدم Backend المحلي:\nغيّر API URL في الإعدادات إلى: http://localhost:8000`);
+      }
+      
+      throw new Error(`Backend لا يرد بـ JSON.\n\nالاستجابة: ${text.substring(0, 200)}`);
     }
     
     const data = await res.json();
     $("statusOut").textContent = pretty(data);
   } catch (e) {
-    $("statusOut").textContent = `خطأ: ${e.message}\n\nتحقق من:\n1. Backend يعمل على ${apiUrl}\n2. لا يوجد حظر CORS\n3. الـ URL صحيح`;
+    let errorMsg = `خطأ: ${e.message}\n\n`;
+    
+    if (e.message.includes("Failed to fetch")) {
+      errorMsg += `💡 لا يمكن الاتصال بـ Backend!\n\n`;
+      
+      if (apiUrl.includes("render.com")) {
+        errorMsg += `الحلول:\n`;
+        errorMsg += `1️⃣ تأكد من نشر المشروع على Render\n`;
+        errorMsg += `2️⃣ انتظر 1-2 دقيقة لتشغيل Backend (النوم الأول)\n`;
+        errorMsg += `3️⃣ أو استخدم localhost:\n`;
+        errorMsg += `   - في الإعدادات، غيّر API URL إلى: http://localhost:8000\n`;
+        errorMsg += `   - شغّل Backend محلياً: ./start.sh`;
+      } else {
+        errorMsg += `تحقق من:\n`;
+        errorMsg += `1. Backend يعمل: ./start.sh\n`;
+        errorMsg += `2. الـ URL صحيح: ${apiUrl}\n`;
+        errorMsg += `3. لا يوجد حظر CORS`;
+      }
+    }
+    
+    $("statusOut").textContent = errorMsg;
   }
 }
 
