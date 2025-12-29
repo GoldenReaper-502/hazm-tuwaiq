@@ -596,17 +596,19 @@ async function loadHealth() {
       errorMsg += `💡 لا يمكن الاتصال بـ Backend!\n\n`;
       
       if (apiUrl.includes("render.com")) {
-        errorMsg += `الحلول:\n`;
-        errorMsg += `1️⃣ تأكد من نشر المشروع على Render\n`;
-        errorMsg += `2️⃣ انتظر 1-2 دقيقة لتشغيل Backend (النوم الأول)\n`;
-        errorMsg += `3️⃣ أو استخدم localhost:\n`;
-        errorMsg += `   - في الإعدادات، غيّر API URL إلى: http://localhost:8000\n`;
-        errorMsg += `   - شغّل Backend محلياً: ./start.sh`;
+        errorMsg += `🔧 لحل المشكلة:\n`;
+        errorMsg += `1️⃣ افتح صفحة إعادة الضبط: reset-settings.html\n`;
+        errorMsg += `2️⃣ اضغط "إعادة الضبط إلى Localhost"\n`;
+        errorMsg += `3️⃣ تأكد من تشغيل Backend محلياً\n\n`;
+        errorMsg += `أو استخدم Render:\n`;
+        errorMsg += `- انشر المشروع على Render أولاً\n`;
+        errorMsg += `- انتظر 1-2 دقيقة للتشغيل`;
       } else {
-        errorMsg += `تحقق من:\n`;
-        errorMsg += `1. Backend يعمل: ./start.sh\n`;
+        errorMsg += `🔧 تحقق من:\n`;
+        errorMsg += `1. Backend يعمل محلياً\n`;
         errorMsg += `2. الـ URL صحيح: ${apiUrl}\n`;
-        errorMsg += `3. لا يوجد حظر CORS`;
+        errorMsg += `3. لا يوجد حظر CORS\n\n`;
+        errorMsg += `💡 للمساعدة: افتح reset-settings.html`;
       }
     }
     
