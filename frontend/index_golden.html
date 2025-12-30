@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حزم طويق | HAZM TUWAIQ - AI Safety & Governance Platform</title>
+    <link rel="stylesheet" href="styles_golden.css">
+</head>
+<body>
+    <!-- Theme Toggle -->
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+        <span class="theme-icon">🌙</span>
+    </button>
+    
+    <!-- Language Toggle -->
+    <button class="lang-toggle" id="langToggle">
+        <span id="langText">EN</span>
+    </button>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="logo">
+                        <svg width="50" height="50" viewBox="0 0 50 50">
+                            <circle cx="25" cy="25" r="23" fill="none" stroke="var(--ht-accent)" stroke-width="2"/>
+                            <path d="M15 25 L25 15 L35 25 L25 35 Z" fill="var(--ht-accent)"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="platform-name" data-i18n="platform_name">حزم طويق</h1>
+                        <p class="platform-tagline" data-i18n="platform_tagline">AI Safety & Governance Platform</p>
+                    </div>
+                </div>
+                <div class="status-indicator" id="statusIndicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text" data-i18n="checking">جاري الفحص...</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard -->
+    <main class="main-content">
+        <div class="container">
+            
+            <!-- Backend Status Module -->
+            <section class="module-card" id="statusModule">
+                <div class="module-header">
+                    <h2>
+                        <span class="module-icon">🔍</span>
+                        <span data-i18n="system_status">حالة النظام</span>
+                    </h2>
+                    <button class="btn-icon" id="refreshStatus" data-i18n-title="refresh">
+                        <span>🔄</span>
+                    </button>
+                </div>
+                <div class="module-body">
+                    <div class="status-grid" id="statusGrid">
+                        <div class="status-item">
+                            <span class="status-label" data-i18n="backend">الخلفية</span>
+                            <span class="status-value" id="backendStatus">...</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label" data-i18n="llm_status">الذكاء الاصطناعي</span>
+                            <span class="status-value" id="llmStatus">...</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label" data-i18n="cctv_status">كاميرات المراقبة</span>
+                            <span class="status-value" id="cctvStatus">...</span>
+                        </div>
+                    </div>
+                    <div class="system-info" id="systemInfo"></div>
+                </div>
+            </section>
+
+            <!-- CCTV Module -->
+            <section class="module-card" id="cctvModule">
+                <div class="module-header">
+                    <h2>
+                        <span class="module-icon">📹</span>
+                        <span data-i18n="cctv_module">نظام كاميرات المراقبة</span>
+                    </h2>
+                </div>
+                <div class="module-body">
+                    <div class="form-group">
+                        <label class="form-label" data-i18n="rtsp_url">رابط RTSP:</label>
+                        <input type="text" class="form-input" id="rtspUrl" placeholder="rtsp://username:password@ip:port/stream">
+                    </div>
+                    <div class="button-group">
+                        <button class="btn btn-primary" id="startCCTV" data-i18n="start_camera">بدء الكاميرا</button>
+                        <button class="btn btn-secondary" id="stopCCTV" disabled data-i18n="stop_camera">إيقاف الكاميرا</button>
+                    </div>
+                    <div class="camera-list" id="cameraList"></div>
+                    <div class="info-message" id="cctvInfo"></div>
+                </div>
+            </section>
+
+            <!-- Live Detection Module -->
+            <section class="module-card" id="detectionModule">
+                <div class="module-header">
+                    <h2>
+                        <span class="module-icon">🎯</span>
+                        <span data-i18n="detection_module">كشف الكائنات المباشر</span>
+                    </h2>
+                </div>
+                <div class="module-body">
+                    <div class="upload-zone" id="uploadZone">
+                        <input type="file" id="imageInput" accept="image/*" hidden>
+                        <label for="imageInput" class="upload-label">
+                            <span class="upload-icon">📁</span>
+                            <span data-i18n="choose_image">اختر صورة للكشف</span>
+                        </label>
+                    </div>
+                    <div class="image-preview" id="imagePreview"></div>
+                    <button class="btn btn-primary btn-block" id="detectBtn" disabled data-i18n="detect">كشف الكائنات</button>
+                    <div class="detection-result" id="detectionResult"></div>
+                </div>
+            </section>
+
+            <!-- Alerts Module -->
+            <section class="module-card" id="alertsModule">
+                <div class="module-header">
+                    <h2>
+                        <span class="module-icon">🚨</span>
+                        <span data-i18n="alerts_module">التنبيهات والإجراءات</span>
+                    </h2>
+                    <button class="btn-icon" id="refreshAlerts">
+                        <span>🔄</span>
+                    </button>
+                </div>
+                <div class="module-body">
+                    <div class="alerts-list" id="alertsList"></div>
+                </div>
+            </section>
+
+            <!-- Reports Module -->
+            <section class="module-card" id="reportsModule">
+                <div class="module-header">
+                    <h2>
+                        <span class="module-icon">📊</span>
+                        <span data-i18n="reports_module">التقارير والحوادث</span>
+                    </h2>
+                </div>
+                <div class="module-body">
+                    <div class="tabs">
+                        <button class="tab active" data-tab="incident" data-i18n="incident_tab">حادث</button>
+                        <button class="tab" data-tab="near-miss" data-i18n="near_miss_tab">شبه حادث</button>
+                    </div>
+                    <div class="tab-content" id="incidentForm">
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="title">العنوان:</label>
+                            <input type="text" class="form-input" id="incidentTitle">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="location">الموقع:</label>
+                            <input type="text" class="form-input" id="incidentLocation">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="severity">الخطورة:</label>
+                            <select class="form-select" id="incidentSeverity">
+                                <option value="low" data-i18n="low">منخفضة</option>
+                                <option value="medium" data-i18n="medium">متوسطة</option>
+                                <option value="high" data-i18n="high">عالية</option>
+                                <option value="critical" data-i18n="critical">حرجة</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="description">الوصف:</label>
+                            <textarea class="form-textarea" id="incidentDesc" rows="3"></textarea>
+                        </div>
+                        <button class="btn btn-primary btn-block" id="submitIncident" data-i18n="submit">إرسال</button>
+                    </div>
+                    <div class="tab-content" id="nearMissForm" style="display:none;">
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="title">العنوان:</label>
+                            <input type="text" class="form-input" id="nearMissTitle">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="description">الوصف:</label>
+                            <textarea class="form-textarea" id="nearMissDesc" rows="3"></textarea>
+                        </div>
+                        <button class="btn btn-primary btn-block" id="submitNearMiss" data-i18n="submit">إرسال</button>
+                    </div>
+                    <div class="export-section">
+                        <button class="btn btn-secondary" id="exportPDF" data-i18n="export_pdf">تصدير PDF</button>
+                        <button class="btn btn-secondary" id="exportExcel" data-i18n="export_excel">تصدير Excel</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Admin Module -->
+            <section class="module-card" id="adminModule">
+                <div class="module-header">
+                    <h2>
+                        <span class="module-icon">👥</span>
+                        <span data-i18n="admin_module">إدارة الأدوار والصلاحيات</span>
+                    </h2>
+                </div>
+                <div class="module-body">
+                    <div class="form-group">
+                        <label class="form-label" data-i18n="role_name">اسم الدور:</label>
+                        <input type="text" class="form-input" id="roleName">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" data-i18n="permissions">الصلاحيات:</label>
+                        <div class="permissions-grid" id="permissionsGrid">
+                            <label><input type="checkbox" value="read"> <span data-i18n="read">قراءة</span></label>
+                            <label><input type="checkbox" value="write"> <span data-i18n="write">كتابة</span></label>
+                            <label><input type="checkbox" value="delete"> <span data-i18n="delete">حذف</span></label>
+                            <label><input type="checkbox" value="admin"> <span data-i18n="admin">إدارة</span></label>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-block" id="createRole" data-i18n="create_role">إنشاء دور</button>
+                    <div class="roles-list" id="rolesList"></div>
+                </div>
+            </section>
+
+            <!-- Chat Module -->
+            <section class="module-card" id="chatModule">
+                <div class="module-header">
+                    <h2>
+                        <span class="module-icon">💬</span>
+                        <span data-i18n="chat_module">مساعد الذكاء الاصطناعي</span>
+                    </h2>
+                    <div class="header-actions">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="attachDetection">
+                            <span data-i18n="attach_detection">إرفاق نتيجة الكشف</span>
+                        </label>
+                        <button class="btn-icon" id="clearChat" data-i18n-title="clear_chat">
+                            <span>🗑️</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="module-body">
+                    <div class="chat-messages" id="chatMessages"></div>
+                    <div class="chat-input-group">
+                        <textarea class="chat-input" id="chatInput" rows="2" placeholder="اسأل عن أي موضوع متعلق بالسلامة..." data-i18n-placeholder="chat_placeholder"></textarea>
+                        <button class="btn btn-primary" id="sendChat" data-i18n="send">إرسال</button>
+                        <button class="btn btn-secondary retry-btn" id="retryChat" style="display:none;" data-i18n="retry">إعادة المحاولة</button>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3 data-i18n="platform_name">حزم طويق</h3>
+                    <p data-i18n="footer_desc">منصة الذكاء الاصطناعي للأمن والحوكمة</p>
+                </div>
+                <div class="footer-section">
+                    <h4 data-i18n="backend">الخلفية</h4>
+                    <p class="backend-url">
+                        <a href="https://hazm-tuwaiq-3.onrender.com" target="_blank">
+                            hazm-tuwaiq-3.onrender.com
+                        </a>
+                    </p>
+                </div>
+                <div class="footer-section">
+                    <h4 data-i18n="version">الإصدار</h4>
+                    <p>v4.0.0 Golden</p>
+                    <p class="copyright">2025 © HAZM TUWAIQ</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app_golden.js"></script>
+</body>
+</html>

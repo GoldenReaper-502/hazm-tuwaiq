@@ -1,799 +1,697 @@
-// ====== إعدادات ======
-// Auto-detect API URL based on environment
-const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const isRenderFrontend = window.location.hostname.includes('hazm-frontend') || window.location.hostname.includes('onrender.com');
+// ===========================================
+// HAZM TUWAIQ - Complete Application Logic
+// ===========================================
 
-let DEFAULT_API;
-if (isLocalhost) {
-  DEFAULT_API = "http://localhost:8000";
-} else if (isRenderFrontend) {
-  // On Render, Frontend and Backend are separate services
-  DEFAULT_API = "https://hazm-backend.onrender.com";
-} else {
-  DEFAULT_API = window.location.origin;
-}
+const CONFIG = {
+    API_BASE_URL: 'http://localhost:5000/api', // ASP.NET Core Backend
+    // API_BASE_URL: 'https://hazm-tuwaiq-3.onrender.com', // Python Backend (Old)
+};
 
-const LS_API = "hazm_api_url";
-const LS_KEY = "hazm_api_key";
-const LS_CHAT_HISTORY = "hazm_chat_history";
+const state = {
+    theme: localStorage.getItem('theme') || 'light',
+    language: localStorage.getItem('language') || 'ar',
+    currentPage: 'dashboard',
+    chatHistory: JSON.parse(localStorage.getItem('chatHistory') || '[]'),
+    sessionId: localStorage.getItem('sessionId') || `session_${Date.now()}`,
+};
 
-// Development mode - show logs
-const IS_DEV = true;
-
-function log(msg) {
-  if (IS_DEV) console.log("[Hazm]", msg);
-}
-
-function $(id) { return document.getElementById(id); }
-
-// ====== Auto-fix Settings ======
-// Reset to localhost if we're on localhost and settings point to Render
-(function autoFixSettings() {
-  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  const savedUrl = localStorage.getItem(LS_API);
-  
-  if (isLocalhost && savedUrl && savedUrl.includes('render.com')) {
-    console.log('[Hazm] Auto-fixing: Resetting API URL to localhost');
-    localStorage.setItem(LS_API, 'http://localhost:8000');
-    localStorage.removeItem(LS_KEY); // Clear API key too
-  }
-})();
-
-// ====== Configuration ======
-function getCfg() {
-  const apiUrl = (localStorage.getItem(LS_API) || DEFAULT_API).replace(/\/+$/, '');
-  const apiKey = localStorage.getItem(LS_KEY) || "";
-  return { apiUrl, apiKey };
-}
-
-function setCfg(apiUrl, apiKey) {
-  localStorage.setItem(LS_API, apiUrl.replace(/\/+$/, ''));
-  localStorage.setItem(LS_KEY, apiKey || "");
-}
-
-function headersJSON() {
-  const { apiKey } = getCfg();
-  const h = { "Content-Type": "application/json" };
-  if (apiKey) h["x-api-key"] = apiKey;
-  return h;
-}
-
-function headersAny() {
-  const { apiKey } = getCfg();
-  const h = {};
-  if (apiKey) h["x-api-key"] = apiKey;
-  return h;
-}
-
-function pretty(obj) {
-  return JSON.stringify(obj, null, 2);
-}
-
-// ====== Safe Fetch Helper ======
-async function safeFetchJson(url, options = {}) {
-  try {
-    const res = await fetch(url, options);
-    const text = await res.text();
-    
+// ===========================================
+// Safe API Fetch - Production Ready
+// ===========================================
+async function apiFetch(endpoint, options = {}) {
     try {
-      const json = JSON.parse(text);
-      return { ok: res.ok, status: res.status, json: json, raw: text };
-    } catch (e) {
-      // Not JSON - return HTML/text as raw
-      return { ok: res.ok, status: res.status, json: null, raw: text };
-    }
-  } catch (fetchError) {
-    // Network error
-    return { ok: false, status: 0, json: null, raw: null, error: fetchError.message };
-  }
-}
-
-// ====== Camera Management ======
-class CameraManager {
-  constructor() {
-    this.stream = null;
-    this.video = $("cameraVideo");
-    this.canvas = $("detectionCanvas");
-    this.ctx = this.canvas.getContext("2d");
-    this.devices = [];
-    this.currentDeviceId = null;
-    this.status = "stopped";
-    this.detectionEnabled = false;
-    this.detectionInterval = null;
-    this.lastDetection = null;
-    
-    this.setupListeners();
-    this.discoverDevices();
-  }
-
-  setupListeners() {
-    $("startCamera").addEventListener("click", () => this.start());
-    $("stopCamera").addEventListener("click", () => this.stop());
-    $("retryCamera").addEventListener("click", () => this.retry());
-    $("deviceSelect").addEventListener("change", (e) => {
-      this.currentDeviceId = e.target.value;
-    });
-    $("enableDetection").addEventListener("change", (e) => {
-      this.detectionEnabled = e.target.checked;
-      if (this.detectionEnabled && this.status === "running") {
-        this.startDetection();
-      } else {
-        this.stopDetection();
-      }
-    });
-  }
-
-  async discoverDevices() {
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      this.devices = devices.filter(d => d.kind === "videoinput");
-      
-      const select = $("deviceSelect");
-      select.innerHTML = '';
-      
-      if (this.devices.length === 0) {
-        select.innerHTML = '<option value="">لا توجد كاميرات متاحة</option>';
-        this.setStatus("failed", "لا توجد أجهزة كاميرا متاحة");
-        return;
-      }
-      
-      this.devices.forEach((device, idx) => {
-        const opt = document.createElement("option");
-        opt.value = device.deviceId;
-        opt.textContent = device.label || `كاميرا ${idx + 1}`;
-        select.appendChild(opt);
-      });
-      
-      this.currentDeviceId = this.devices[0].deviceId;
-      log(`Found ${this.devices.length} camera(s)`);
-    } catch (e) {
-      log(`Error discovering devices: ${e.message}`);
-      this.setStatus("failed", `خطأ في البحث عن الأجهزة: ${e.message}`);
-    }
-  }
-
-  setStatus(status, message = "") {
-    this.status = status;
-    const statusText = $("cameraStatusText");
-    const statusMap = {
-      "stopped": "⚫ متوقفة",
-      "starting": "🟡 تحضير...",
-      "running": "🟢 تعمل",
-      "failed": "🔴 خطأ",
-      "retrying": "🟠 محاولة جديدة...",
-    };
-    
-    statusText.textContent = statusMap[status] || status;
-    if (message) {
-      statusText.textContent += ` - ${message}`;
-    }
-    
-    // Update button states
-    $("startCamera").disabled = status !== "stopped";
-    $("stopCamera").disabled = status !== "running";
-    $("retryCamera").disabled = status !== "failed";
-    $("enableDetection").disabled = status !== "running";
-  }
-
-  async start() {
-    if (!this.currentDeviceId && this.devices.length === 0) {
-      this.setStatus("failed", "لا توجد كاميرا متاحة");
-      return;
-    }
-
-    this.setStatus("starting");
-    
-    try {
-      const constraints = {
-        video: {
-          deviceId: this.currentDeviceId ? { exact: this.currentDeviceId } : undefined,
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-        audio: false,
-      };
-
-      this.stream = await navigator.mediaDevices.getUserMedia(constraints);
-      this.video.srcObject = this.stream;
-
-      // Wait for video to load and check dimensions
-      await new Promise((resolve, reject) => {
-        const checkReady = () => {
-          if (this.video.videoWidth > 0 && this.video.videoHeight > 0) {
-            resolve();
-          } else {
-            setTimeout(checkReady, 100);
-          }
-        };
+        const url = CONFIG.API_BASE_URL + endpoint;
+        const response = await fetch(url, {
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            ...options
+        });
         
-        const timeout = setTimeout(() => {
-          reject(new Error("فشل تحميل الكاميرا - شاشة سوداء"));
-        }, 3000);
-
-        this.video.onloadedmetadata = () => {
-          clearTimeout(timeout);
-          checkReady();
-        };
-      });
-
-      // Setup canvas
-      this.canvas.width = this.video.videoWidth;
-      this.canvas.height = this.video.videoHeight;
-
-      // Show video container
-      $("videoContainer").style.display = "block";
-      $("cameraError").style.display = "none";
-
-      this.setStatus("running", `${this.video.videoWidth}x${this.video.videoHeight}`);
-      log("Camera started successfully");
-
-      if ($("enableDetection").checked) {
-        this.startDetection();
-      }
-    } catch (e) {
-      log(`Camera error: ${e.message}`);
-      
-      let errorMsg = e.message;
-      if (e.name === "NotAllowedError") {
-        errorMsg = "تم رفض صلاحيات الكاميرا. تحقق من إعدادات الخصوصية.";
-      } else if (e.name === "NotFoundError") {
-        errorMsg = "لا توجد كاميرا متاحة.";
-      } else if (e.name === "NotReadableError") {
-        errorMsg = "الكاميرا قيد الاستخدام من قبل تطبيق آخر.";
-      } else if (e.message.includes("secure context")) {
-        errorMsg = "يجب استخدام HTTPS. استخدم localhost أو https فقط.";
-      }
-
-      this.setStatus("failed", errorMsg);
-      $("cameraError").textContent = `خطأ: ${errorMsg}`;
-      $("cameraError").style.display = "block";
-    }
-  }
-
-  stop() {
-    if (this.stream) {
-      this.stream.getTracks().forEach(track => track.stop());
-      this.stream = null;
-    }
-    this.video.srcObject = null;
-    $("videoContainer").style.display = "none";
-    this.setStatus("stopped");
-    this.stopDetection();
-    log("Camera stopped");
-  }
-
-  retry() {
-    this.stop();
-    setTimeout(() => this.start(), 500);
-  }
-
-  startDetection() {
-    if (this.detectionInterval) return;
-    
-    log("Detection started");
-    this.detectionInterval = setInterval(() => this.captureAndDetect(), 1200);
-  }
-
-  stopDetection() {
-    if (this.detectionInterval) {
-      clearInterval(this.detectionInterval);
-      this.detectionInterval = null;
-    }
-    log("Detection stopped");
-  }
-
-  async captureAndDetect() {
-    if (!this.video || this.video.videoWidth === 0) return;
-
-    try {
-      // Draw video frame to canvas
-      this.ctx.drawImage(this.video, 0, 0);
-      
-      // Get base64 frame
-      const frameData = this.canvas.toDataURL("image/jpeg", 0.8).split(',')[1];
-      
-      // Send to backend
-      const { apiUrl } = getCfg();
-      const response = await fetch(`${apiUrl}/detect`, {
-        method: "POST",
-        headers: headersJSON(),
-        body: JSON.stringify({
-          frame_data: frameData,
-          timestamp: new Date().toISOString(),
-        }),
-      });
-
-      if (!response.ok) {
-        log(`Detection error: ${response.status}`);
-        return;
-      }
-
-      // Check if response is JSON
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        log(`Unexpected response type: ${contentType}`);
-        return;
-      }
-
-      const detection = await response.json();
-      this.lastDetection = detection;
-      
-      // Update stats
-      const now = new Date().toLocaleTimeString("ar-SA");
-      $("detectionStats").textContent = `آخر تحديث: ${now} | ${detection.objects.length} أجسام`;
-      
-      // Draw overlays
-      this.drawDetectionOverlay(detection);
-      
-      // Show results
-      this.showDetectionResults(detection);
-      
-      log(`Detection: ${detection.objects.length} objects`);
-    } catch (e) {
-      log(`Capture error: ${e.message}`);
-    }
-  }
-
-  drawDetectionOverlay(detection) {
-    // Draw semi-transparent overlay with boxes
-    this.ctx.strokeStyle = "#00FF00";
-    this.ctx.lineWidth = 2;
-    this.ctx.font = "12px Arial";
-    this.ctx.fillStyle = "#00FF00";
-
-    detection.objects.forEach(obj => {
-      const bbox = obj.bbox || obj.box || obj.boxes || [0, 0, 0, 0];
-      const [x1, y1, x2, y2] = bbox;
-      try {
-        this.ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
-      } catch (e) {}
-      
-      const cls = obj.class || obj.label || obj.name || 'obj';
-      const conf = (typeof obj.confidence === 'number') ? obj.confidence : (obj.conf || 0);
-      const label = `${cls} ${(conf * 100).toFixed(0)}%`;
-      try {
-        this.ctx.fillText(label, x1, Math.max(12, y1 - 5));
-      } catch (e) {}
-    });
-  }
-
-  showDetectionResults(detection) {
-    $("detectionResult").style.display = "block";
-    $("detectionOutput").textContent = JSON.stringify({
-      id: detection.id,
-      timestamp: detection.timestamp,
-      objects: detection.objects.map(o => ({
-        class: o.class,
-        confidence: `${(o.confidence * 100).toFixed(1)}%`,
-      })),
-    }, null, 2);
-  }
-}
-
-// ====== Chat Management ======
-class ChatManager {
-  constructor() {
-    this.sessionId = `session_${Date.now()}`;
-    this.messages = this.loadHistory();
-    this.isLoading = false;
-    
-    this.setupListeners();
-    this.renderMessages();
-  }
-
-  setupListeners() {
-    $("sendChat").addEventListener("click", () => this.sendMessage());
-    $("chatInput").addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        this.sendMessage();
-      }
-    });
-    $("clearChat").addEventListener("click", () => this.clearHistory());
-    $("askAboutDetection").addEventListener("click", () => this.askAboutDetection());
-  }
-
-  loadHistory() {
-    try {
-      const data = localStorage.getItem(LS_CHAT_HISTORY);
-      return data ? JSON.parse(data) : [];
-    } catch (e) {
-      log(`Error loading chat history: ${e.message}`);
-      return [];
-    }
-  }
-
-  saveHistory() {
-    try {
-      localStorage.setItem(LS_CHAT_HISTORY, JSON.stringify(this.messages));
-    } catch (e) {
-      log(`Error saving chat history: ${e.message}`);
-    }
-  }
-
-  async sendMessage() {
-    const input = $("chatInput");
-    const message = input.value.trim();
-
-    if (!message) {
-      $("chatStatus").textContent = "اكتب سؤالك أولاً";
-      return;
-    }
-
-    if (this.isLoading) {
-      $("chatStatus").textContent = "جارِ الإرسال...";
-      return;
-    }
-
-    this.isLoading = true;
-    $("sendChat").disabled = true;
-    $("chatStatus").textContent = "جارِ الإرسال...";
-
-    try {
-      const { apiUrl } = getCfg();
-      
-      const payload = {
-        message,
-        detection_result: camera.lastDetection || null,
-        session_id: this.sessionId,
-      };
-
-      const response = await fetch(`${apiUrl}/chat`, {
-        method: "POST",
-        headers: headersJSON(),
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 100)}`);
-      }
-
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
+        // Get content type
+        const contentType = response.headers.get('content-type') || '';
+        
+        // Validate JSON response
+        if (!contentType.includes('application/json') && 
+            !contentType.includes('application/problem+json')) {
+            const text = await response.text();
+            throw new Error(`Expected JSON but got ${contentType}: ${text.slice(0, 100)}`);
+        }
+        
+        // Parse JSON
         const text = await response.text();
-        throw new Error(`توقع JSON لكن استلم: ${text.substring(0, 100)}...`);
-      }
-
-      const chatResponse = await response.json();
-      
-      // Add to messages (exactly ONE response per question)
-      this.messages.push({
-        role: "user",
-        content: message,
-        timestamp: new Date().toISOString(),
-      });
-      this.messages.push({
-        role: "assistant",
-        content: chatResponse.assistant_response,
-        timestamp: chatResponse.timestamp,
-        detectionAttached: chatResponse.detection_attached,
-      });
-
-      this.saveHistory();
-      this.renderMessages();
-      input.value = "";
-      $("chatStatus").textContent = "تم الإرسال";
-      
-      log("Message sent successfully");
-    } catch (e) {
-      log(`Chat error: ${e.message}`);
-      $("chatStatus").textContent = `خطأ: ${e.message}`;
-    } finally {
-      this.isLoading = false;
-      $("sendChat").disabled = false;
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            throw new Error(`Invalid JSON response: ${text.slice(0, 100)}`);
+        }
+        
+        // Handle errors
+        if (!response.ok) {
+            const errorMessage = data.detail || data.title || data.message || `HTTP ${response.status}`;
+            throw new Error(errorMessage);
+        }
+        
+        return data;
+    } catch (error) {
+        console.error(`API Error [${endpoint}]:`, error);
+        throw error;
     }
-  }
-
-  askAboutDetection() {
-    if (!camera.lastDetection) {
-      $("chatStatus").textContent = "لا توجد نتائج كشف حالية";
-      return;
-    }
-
-    const detInfo = camera.lastDetection.objects
-      .map(o => `${o.class} (${(o.confidence * 100).toFixed(0)}%)`)
-      .join(", ");
-    
-    $("chatInput").value = `أخبرني عن هذا الكشف: ${detInfo}`;
-    this.sendMessage();
-  }
-
-  renderMessages() {
-    const container = $("chatMessages");
-    container.innerHTML = '';
-
-    this.messages.forEach(msg => {
-      const div = document.createElement("div");
-      div.className = `chat-message ${msg.role}`;
-      
-      const roleText = msg.role === "user" ? "أنت" : "النظام";
-      const icon = msg.role === "user" ? "👤" : "🤖";
-      
-      let content = msg.content;
-      if (msg.detectionAttached) {
-        content += " (مرفق: نتيجة كشف)";
-      }
-
-      div.innerHTML = `
-        <div class="chat-role">${icon} ${roleText}</div>
-        <div class="chat-content">${this.escapeHtml(content)}</div>
-        <div class="chat-time">${this.formatTime(msg.timestamp)}</div>
-      `;
-
-      container.appendChild(div);
-    });
-
-    // Scroll to bottom
-    container.scrollTop = container.scrollHeight;
-  }
-
-  clearHistory() {
-    if (confirm("هل تريد مسح سجل الدردشة؟")) {
-      this.messages = [];
-      this.saveHistory();
-      this.renderMessages();
-      log("Chat history cleared");
-    }
-  }
-
-  escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
-
-  formatTime(timestamp) {
-    if (!timestamp) return "";
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString("ar-SA");
-  }
 }
 
-// ====== Health Check ======
-async function loadHealth() {
-  const { apiUrl } = getCfg();
-  $("statusOut").textContent = "جارِ الاتصال...";
-  
-  try {
-    // Try /health first
-    let result = await safeFetchJson(`${apiUrl}/health`, { 
-      headers: headersAny(),
-      mode: 'cors'
-    });
+// ===========================================
+// Navigation
+// ===========================================
+function navigateTo(pageName) {
+    // Hide all pages
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     
-    // If /health failed, try root
-    if (!result.ok || !result.json) {
-      result = await safeFetchJson(`${apiUrl}/`, { 
-        headers: headersAny(),
-        mode: 'cors'
-      });
+    // Show selected page
+    const page = document.getElementById(pageName + 'Page');
+    if (page) {
+        page.classList.add('active');
+        state.currentPage = pageName;
+        
+        // Update nav items
+        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+        const activeNav = document.querySelector(`[data-page="${pageName}"]`);
+        if (activeNav) activeNav.classList.add('active');
+        
+        // Update page title
+        const titles = {
+            dashboard: 'لوحة التحكم',
+            cameras: 'الكاميرات',
+            detection: 'الكشف والقراءة',
+            chatbot: 'المساعد الذكي',
+            incidents: 'الحوادث',
+            risk: 'تقييم المخاطر',
+            inspections: 'التفتيش',
+            reports: 'التقارير'
+        };
+        document.getElementById('pageTitle').textContent = titles[pageName] || pageName;
+        document.getElementById('breadcrumbPage').textContent = titles[pageName] || pageName;
+        
+        // Load page data
+        loadPageData(pageName);
     }
-    
-    // Handle fetch errors
-    if (result.error) {
-      throw new Error(`Failed to fetch: ${result.error}`);
-    }
-    
-    // Handle non-JSON responses
-    if (!result.json) {
-      const text = result.raw || "No response";
-      
-      if (text.includes("Not Found") && apiUrl.includes("render.com")) {
-        throw new Error(`⚠️ Backend غير موجود على Render!\n\nيجب نشر المشروع على Render أولاً:\n1. اذهب إلى https://dashboard.render.com\n2. اضغط New + → Blueprint\n3. اختر المستودع: GoldenReaper-502/hazm-tuwaiq\n4. اضغط Apply\n\nأو استخدم Backend المحلي:\nغيّر API URL في الإعدادات إلى: http://localhost:8000`);
-      }
-      
-      throw new Error(`Backend لا يرد بـ JSON (Status: ${result.status}).\n\nالاستجابة: ${text.substring(0, 200)}`);
-    }
-    
-    // Success - show JSON
-    $("statusOut").textContent = pretty(result.json);
-    
-  } catch (e) {
-    let errorMsg = `خطأ: ${e.message}\n\n`;
-    
-    if (e.message.includes("Failed to fetch")) {
-      errorMsg += `💡 لا يمكن الاتصال بـ Backend!\n\n`;
-      
-      if (apiUrl.includes("render.com")) {
-        errorMsg += `🔧 لحل المشكلة:\n`;
-        errorMsg += `1️⃣ افتح صفحة إعادة الضبط: reset-settings.html\n`;
-        errorMsg += `2️⃣ اضغط "إعادة الضبط إلى Localhost"\n`;
-        errorMsg += `3️⃣ تأكد من تشغيل Backend محلياً\n\n`;
-        errorMsg += `أو استخدم Render:\n`;
-        errorMsg += `- انشر المشروع على Render أولاً\n`;
-        errorMsg += `- انتظر 1-2 دقيقة للتشغيل`;
-      } else {
-        errorMsg += `🔧 تحقق من:\n`;
-        errorMsg += `1. Backend يعمل محلياً\n`;
-        errorMsg += `2. الـ URL صحيح: ${apiUrl}\n`;
-        errorMsg += `3. لا يوجد حظر CORS\n\n`;
-        errorMsg += `💡 للمساعدة: افتح reset-settings.html`;
-      }
-    }
-    
-    $("statusOut").textContent = errorMsg;
-  }
 }
 
-// ====== Incidents ======
-async function listIncidents() {
-  const { apiUrl } = getCfg();
-  $("incidentsWrap").innerHTML = "";
-  try {
-    const res = await fetch(`${apiUrl}/incidents`, { 
-      headers: headersAny(),
-      mode: 'cors'
-    });
+function loadPageData(pageName) {
+    switch(pageName) {
+        case 'dashboard':
+            loadDashboard();
+            break;
+        case 'cameras':
+            loadCameras();
+            break;
+        case 'detection':
+            loadDetectionHistory();
+            break;
+        case 'chatbot':
+            loadChatHistory();
+            break;
+        case 'incidents':
+            loadIncidents();
+            break;
+        case 'risk':
+            loadRiskAssessments();
+            break;
+        case 'inspections':
+            loadInspections();
+            break;
+        case 'reports':
+            loadReports();
+            break;
+    }
+}
+
+// ===========================================
+// Dashboard Functions
+// ===========================================
+async function loadDashboard() {
+    try {
+        // Load stats
+        const [cameras, detections, incidents] = await Promise.all([
+            apiFetch('/cctv/cameras').catch(() => []),
+            apiFetch('/detections').catch(() => []),
+            apiFetch('/incidents').catch(() => [])
+        ]);
+        
+        document.getElementById('camerasCount').textContent = cameras.length || '0';
+        document.getElementById('detectionsCount').textContent = detections.length || '0';
+        document.getElementById('incidentsCount').textContent = incidents.filter(i => i.status !== 'closed').length || '0';
+        document.getElementById('chatsCount').textContent = state.chatHistory.length || '0';
+        
+        // Load recent incidents
+        const recentIncidents = document.getElementById('recentIncidents');
+        if (incidents.length === 0) {
+            recentIncidents.innerHTML = '<div class="loading">لا توجد حوادث</div>';
+        } else {
+            recentIncidents.innerHTML = incidents.slice(0, 5).map(inc => `
+                <div class="incident-item">
+                    <strong>${inc.title || 'حادثة'}</strong>
+                    <small>${inc.created_at || ''}</small>
+                </div>
+            `).join('');
+        }
+        
+        // Load recent detections
+        const recentDetections = document.getElementById('recentDetections');
+        if (detections.length === 0) {
+            recentDetections.innerHTML = '<div class="loading">لا توجد كشوفات</div>';
+        } else {
+            recentDetections.innerHTML = detections.slice(0, 5).map(det => `
+                <div class="detection-item">
+                    <strong>${det.objects?.length || 0} أشياء</strong>
+                    <small>${det.timestamp || ''}</small>
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        console.error('Dashboard load error:', error);
+    }
+}
+
+// ===========================================
+// Cameras Functions
+// ===========================================
+async function loadCameras() {
+    const grid = document.getElementById('camerasGrid');
+    grid.innerHTML = '<div class="loading">جاري تحميل الكاميرات...</div>';
     
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
+    try {
+        const cameras = await apiFetch('/cctv/cameras');
+        if (cameras.length === 0) {
+            grid.innerHTML = '<div class="loading">لا توجد كاميرات</div>';
+            return;
+        }
+        
+        grid.innerHTML = cameras.map(cam => `
+            <div class="camera-card">
+                <h4>${cam.name || cam.id}</h4>
+                <p>الحالة: ${cam.enabled ? '🟢 مفعّل' : '�� معطّل'}</p>
+                <button class="btn btn-secondary" onclick="toggleCamera('${cam.id}', ${!cam.enabled})">
+                    ${cam.enabled ? 'إيقاف' : 'تشغيل'}
+                </button>
+            </div>
+        `).join('');
+    } catch (error) {
+        grid.innerHTML = `<div class="error">خطأ: ${error.message}</div>`;
     }
+}
+
+function showAddCameraModal() {
+    document.getElementById('addCameraModal').classList.add('active');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+}
+
+async function addCamera() {
+    const name = document.getElementById('cameraName').value;
+    const url = document.getElementById('cameraUrl').value;
     
-    const contentType = res.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-      throw new Error("استجابة غير صحيحة من Backend");
-    }
-    
-    const data = await res.json();
-    if (!Array.isArray(data) || data.length === 0) {
-      $("incidentsWrap").innerHTML = `<div class="item"><div class="meta">لا يوجد بلاغات</div></div>`;
-      return;
-    }
-    $("incidentsWrap").innerHTML = data
-      .slice().reverse()
-      .map(i => `
-        <div class="item">
-          <div class="meta">
-            <div>${badgeForSeverity(i.severity)} <b>${i.title || "-"}</b></div>
-            <div>${i.created_at_utc || ""}</div>
-          </div>
-          <div class="muted">الموقع: ${i.location || "-"}</div>
-          <div style="margin-top:6px">${i.description || ""}</div>
-        </div>
-      `).join("");
-  } catch (e) {
-    $("incidentsWrap").innerHTML = `<div class="item"><div class="meta">خطأ: ${e.message}</div></div>`;
-  }
-}
-
-async function createIncident(payload) {
-  const { apiUrl } = getCfg();
-  $("incOut").textContent = "جارِ الإرسال...";
-  try {
-    const res = await fetch(`${apiUrl}/incidents`, {
-      method: "POST",
-      headers: headersJSON(),
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    $("incOut").textContent = pretty(data);
-    await listIncidents();
-  } catch (e) {
-    $("incOut").textContent = `خطأ: ${e.message}`;
-  }
-}
-
-function badgeForSeverity(sev) {
-  const s = (sev || "").toLowerCase();
-  if (s === "critical") return `<span class="badge danger">حرجة</span>`;
-  if (s === "high") return `<span class="badge warn">عالية</span>`;
-  if (s === "medium") return `<span class="badge">متوسطة</span>`;
-  return `<span class="badge">منخفضة</span>`;
-}
-
-// ====== Uploads ======
-async function uploadFile(file, tag) {
-  const { apiUrl } = getCfg();
-  $("uploadOut").textContent = "جارِ الرفع...";
-  try {
-    const form = new FormData();
-    form.append("file", file);
-    if (tag) form.append("tag", tag);
-
-    const res = await fetch(`${apiUrl}/uploads`, {
-      method: "POST",
-      headers: headersAny(),
-      body: form
-    });
-    const data = await res.json();
-    $("uploadOut").textContent = pretty(data);
-  } catch (e) {
-    $("uploadOut").textContent = `خطأ: ${e.message}`;
-  }
-}
-
-async function listUploads() {
-  const { apiUrl } = getCfg();
-  $("uploadsWrap").innerHTML = "";
-  try {
-    const res = await fetch(`${apiUrl}/uploads`, { headers: headersAny() });
-    const data = await res.json();
-    if (!Array.isArray(data) || data.length === 0) {
-      $("uploadsWrap").innerHTML = `<div class="item"><div class="meta">لا يوجد مرفوعات</div></div>`;
-      return;
-    }
-    $("uploadsWrap").innerHTML = data
-      .slice().reverse()
-      .map(u => `
-        <div class="item">
-          <div class="meta">
-            <div><b>${u.filename || "-"}</b></div>
-            <div>${u.created_at_utc || ""}</div>
-          </div>
-          <div class="muted">نوع: ${u.content_type || "-"}</div>
-          <div class="muted">حجم: ${u.size_bytes ?? "-"} bytes</div>
-        </div>
-      `).join("");
-  } catch (e) {
-    $("uploadsWrap").innerHTML = `<div class="item"><div class="meta">خطأ: ${e.message}</div></div>`;
-  }
-}
-
-// ====== Initialization ======
-let camera;
-let chat;
-
-function init() {
-  const cfg = getCfg();
-  $("apiUrl").value = cfg.apiUrl;
-  $("apiKey").value = cfg.apiKey;
-
-  // Configuration
-  $("saveCfg").addEventListener("click", () => {
-    const apiUrl = $("apiUrl").value.trim() || DEFAULT_API;
-    const apiKey = $("apiKey").value.trim();
-    setCfg(apiUrl, apiKey);
-    $("statusOut").textContent = "تم حفظ الإعدادات.";
-    loadHealth();
-  });
-
-  // Health
-  $("refreshStatus").addEventListener("click", loadHealth);
-
-  // Camera
-  camera = new CameraManager();
-
-  // Chat
-  chat = new ChatManager();
-
-  // Incidents
-  $("sendIncident").addEventListener("click", async (e) => {
-    e.preventDefault();
-    const payload = {
-      title: $("incTitle").value.trim(),
-      location: $("incLocation").value.trim() || null,
-      description: $("incDesc").value.trim() || null,
-      severity: $("incSeverity").value
-    };
-    await createIncident(payload);
-  });
-
-  $("refreshIncidents").addEventListener("click", listIncidents);
-
-  // Uploads
-  const uploadForm = document.querySelector('form') || {
-    submit: (f) => {}
-  };
-  
-  const uploadBtn = $("doUpload");
-  if (uploadBtn) {
-    uploadBtn.addEventListener("click", async () => {
-      const file = $("uploadFile").files?.[0];
-      const tag = $("uploadTag").value.trim();
-      if (!file) {
-        $("uploadOut").textContent = "اختار ملف أولاً.";
+    if (!name || !url) {
+        alert('الرجاء ملء جميع الحقول');
         return;
-      }
-      await uploadFile(file, tag);
-    });
-  }
-
-  $("refreshStatus").click(); // Initial load
-  listIncidents();
-  listUploads();
-  
-  log("Initialization complete");
+    }
+    
+    try {
+        await apiFetch('/cctv/cameras', {
+            method: 'POST',
+            body: JSON.stringify({ name, url })
+        });
+        closeModal('addCameraModal');
+        loadCameras();
+        document.getElementById('cameraName').value = '';
+        document.getElementById('cameraUrl').value = '';
+    } catch (error) {
+        alert(`خطأ: ${error.message}`);
+    }
 }
 
-document.addEventListener("DOMContentLoaded", init);
+async function toggleCamera(cameraId, enable) {
+    try {
+        const endpoint = enable ? `/cctv/cameras/${cameraId}/start` : `/cctv/cameras/${cameraId}/stop`;
+        await apiFetch(endpoint, { method: 'POST' });
+        loadCameras();
+    } catch (error) {
+        alert(`خطأ: ${error.message}`);
+    }
+}
+
+// ===========================================
+// Detection Functions
+// ===========================================
+function setupDetectionUpload() {
+    const fileInput = document.getElementById('detectionFile');
+    const uploadArea = document.getElementById('uploadArea');
+    const preview = document.getElementById('detectionPreview');
+    const previewImage = document.getElementById('previewImage');
+    const detectBtn = document.getElementById('detectBtn');
+    
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                previewImage.src = event.target.result;
+                preview.style.display = 'block';
+                detectBtn.style.display = 'inline-flex';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    uploadArea.addEventListener('click', () => fileInput.click());
+}
+
+async function detectObjects() {
+    const fileInput = document.getElementById('detectionFile');
+    const resultsDiv = document.getElementById('detectionResults');
+    
+    if (!fileInput.files || fileInput.files.length === 0) {
+        resultsDiv.innerHTML = '<div class="error">الرجاء اختيار صورة</div>';
+        return;
+    }
+    
+    resultsDiv.innerHTML = '<div class="loading">جاري الكشف...</div>';
+    
+    try {
+        const file = fileInput.files[0];
+        const base64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+        
+        const data = await apiFetch('/detect', {
+            method: 'POST',
+            body: JSON.stringify({ frame_data: base64, timestamp: new Date().toISOString() })
+        });
+        
+        const objects = data.objects || [];
+        if (objects.length === 0) {
+            resultsDiv.innerHTML = '<div class="loading">لم يتم اكتشاف أي أشياء</div>';
+        } else {
+            resultsDiv.innerHTML = `
+                <div class="success">
+                    <h4>تم اكتشاف ${objects.length} أشياء:</h4>
+                    ${objects.map(obj => `
+                        <div style="margin: 10px 0;">
+                            <strong>${obj.label || obj.class}</strong> - 
+                            الثقة: ${(obj.confidence * 100).toFixed(1)}%
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        loadDetectionHistory();
+    } catch (error) {
+        resultsDiv.innerHTML = `<div class="error">خطأ: ${error.message}</div>`;
+    }
+}
+
+async function loadDetectionHistory() {
+    const history = document.getElementById('detectionHistory');
+    if (!history) return;
+    
+    history.innerHTML = '<div class="loading">جاري التحميل...</div>';
+    
+    try {
+        const detections = await apiFetch('/detections');
+        if (detections.length === 0) {
+            history.innerHTML = '<div class="loading">لا توجد كشوفات</div>';
+        } else {
+            history.innerHTML = detections.slice(0, 10).map(det => `
+                <div class="card" style="margin-bottom: 1rem;">
+                    <div class="card-body">
+                        <strong>${det.objects?.length || 0} أشياء</strong>
+                        <small>${det.timestamp || ''}</small>
+                    </div>
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        history.innerHTML = `<div class="error">خطأ: ${error.message}</div>`;
+    }
+}
+
+// ===========================================
+// Chat Functions
+// ===========================================
+function loadChatHistory() {
+    const messagesDiv = document.getElementById('chatMessages');
+    if (!messagesDiv) return;
+    
+    // Clear welcome message if there's history
+    if (state.chatHistory.length > 0) {
+        messagesDiv.innerHTML = '';
+        state.chatHistory.forEach(msg => {
+            const bubble = document.createElement('div');
+            bubble.className = `chat-bubble ${msg.role === 'user' ? 'user-bubble' : 'assistant-bubble'}`;
+            bubble.textContent = msg.content;
+            messagesDiv.appendChild(bubble);
+        });
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+}
+
+function sendQuickQuestion(question) {
+    document.getElementById('chatInput').value = question;
+    sendChat();
+}
+
+async function sendChat() {
+    const input = document.getElementById('chatInput');
+    const messagesDiv = document.getElementById('chatMessages');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    // Clear welcome if first message
+    const welcome = messagesDiv.querySelector('.chat-welcome');
+    if (welcome) welcome.remove();
+    
+    // Add user message
+    const userBubble = document.createElement('div');
+    userBubble.className = 'chat-bubble user-bubble';
+    userBubble.textContent = message;
+    messagesDiv.appendChild(userBubble);
+    
+    state.chatHistory.push({ role: 'user', content: message });
+    localStorage.setItem('chatHistory', JSON.stringify(state.chatHistory));
+    
+    input.value = '';
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    
+    // Add loading
+    const loadingBubble = document.createElement('div');
+    loadingBubble.className = 'chat-bubble assistant-bubble';
+    loadingBubble.textContent = 'جاري التفكير...';
+    messagesDiv.appendChild(loadingBubble);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    
+    try {
+        const data = await apiFetch('/chat', {
+            method: 'POST',
+            body: JSON.stringify({ message, session_id: state.sessionId })
+        });
+        
+        loadingBubble.remove();
+        
+        const assistantBubble = document.createElement('div');
+        assistantBubble.className = 'chat-bubble assistant-bubble';
+        assistantBubble.textContent = data.assistant_response || data.message || 'لا يوجد رد';
+        messagesDiv.appendChild(assistantBubble);
+        
+        state.chatHistory.push({ role: 'assistant', content: data.assistant_response || data.message });
+        localStorage.setItem('chatHistory', JSON.stringify(state.chatHistory));
+        
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    } catch (error) {
+        loadingBubble.remove();
+        const errorBubble = document.createElement('div');
+        errorBubble.className = 'chat-bubble assistant-bubble error';
+        errorBubble.textContent = `خطأ: ${error.message}`;
+        messagesDiv.appendChild(errorBubble);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+}
+
+function clearChat() {
+    state.chatHistory = [];
+    localStorage.removeItem('chatHistory');
+    document.getElementById('chatMessages').innerHTML = `
+        <div class="chat-welcome">
+            <h4>مرحباً بك في المساعد الذكي!</h4>
+            <p>أنا هنا لمساعدتك في كل ما يتعلق بالسلامة والصحة المهنية</p>
+        </div>
+    `;
+}
+
+// ===========================================
+// Incidents Functions
+// ===========================================
+async function loadIncidents() {
+    const list = document.getElementById('incidentsList');
+    list.innerHTML = '<div class="loading">جاري تحميل الحوادث...</div>';
+    
+    try {
+        const incidents = await apiFetch('/incidents');
+        if (incidents.length === 0) {
+            list.innerHTML = '<div class="loading">لا توجد حوادث</div>';
+        } else {
+            list.innerHTML = incidents.map(inc => `
+                <div class="card" style="margin-bottom: 1rem;">
+                    <div class="card-body">
+                        <h4>${inc.title || 'حادثة'}</h4>
+                        <p>${inc.description || ''}</p>
+                        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                            <span class="badge-${inc.severity || 'medium'}">${inc.severity || 'متوسط'}</span>
+                            <small>${inc.created_at || ''}</small>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        list.innerHTML = `<div class="error">خطأ: ${error.message}</div>`;
+    }
+}
+
+function showAddIncidentModal() {
+    document.getElementById('addIncidentModal').classList.add('active');
+}
+
+async function submitIncident() {
+    const title = document.getElementById('incidentTitle').value;
+    const description = document.getElementById('incidentDescription').value;
+    const severity = document.getElementById('incidentSeverity').value;
+    
+    if (!title || !description) {
+        alert('الرجاء ملء جميع الحقول');
+        return;
+    }
+    
+    try {
+        await apiFetch('/incidents', {
+            method: 'POST',
+            body: JSON.stringify({ title, description, severity, timestamp: new Date().toISOString() })
+        });
+        closeModal('addIncidentModal');
+        loadIncidents();
+        document.getElementById('incidentTitle').value = '';
+        document.getElementById('incidentDescription').value = '';
+    } catch (error) {
+        alert(`خطأ: ${error.message}`);
+    }
+}
+
+function filterIncidents() {
+    // TODO: Implement filtering
+    loadIncidents();
+}
+
+// ===========================================
+// Risk Assessment Functions
+// ===========================================
+async function loadRiskAssessments() {
+    const list = document.getElementById('riskList');
+    list.innerHTML = '<div class="loading">جاري تحميل تقييمات المخاطر...</div>';
+    
+    try {
+        const risks = await apiFetch('/risk-assessments');
+        if (risks.length === 0) {
+            list.innerHTML = '<div class="loading">لا توجد تقييمات</div>';
+        } else {
+            list.innerHTML = risks.map(risk => `
+                <div class="card" style="margin-bottom: 1rem;">
+                    <div class="card-body">
+                        <h4>${risk.hazard_description || 'تقييم'}</h4>
+                        <p>المخاطر: ${risk.risk_level || 'متوسط'}</p>
+                        <small>${risk.created_at || ''}</small>
+                    </div>
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        list.innerHTML = `<div class="error">خطأ: ${error.message}</div>`;
+    }
+}
+
+function showAddRiskModal() {
+    alert('قريباً: نموذج تقييم المخاطر');
+}
+
+// ===========================================
+// Inspections Functions
+// ===========================================
+async function loadInspections() {
+    const list = document.getElementById('inspectionsList');
+    list.innerHTML = '<div class="loading">جاري تحميل التفتيشات...</div>';
+    
+    try {
+        const inspections = await apiFetch('/inspections');
+        if (inspections.length === 0) {
+            list.innerHTML = '<div class="loading">لا توجد تفتيشات</div>';
+        } else {
+            list.innerHTML = inspections.map(insp => `
+                <div class="card" style="margin-bottom: 1rem;">
+                    <div class="card-body">
+                        <h4>${insp.location || 'تفتيش'}</h4>
+                        <p>النتيجة: ${insp.result || 'جاري المراجعة'}</p>
+                        <small>${insp.inspection_date || ''}</small>
+                    </div>
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        list.innerHTML = `<div class="error">خطأ: ${error.message}</div>`;
+    }
+}
+
+function showAddInspectionModal() {
+    alert('قريباً: نموذج التفتيش');
+}
+
+// ===========================================
+// Reports Functions
+// ===========================================
+async function loadReports() {
+    const list = document.getElementById('reportsList');
+    list.innerHTML = '<div class="loading">جاري تحميل التقارير...</div>';
+    
+    try {
+        const reports = await apiFetch('/reports');
+        if (reports.length === 0) {
+            list.innerHTML = '<div class="loading">لا توجد تقارير</div>';
+        } else {
+            list.innerHTML = reports.map(rep => `
+                <div class="card" style="margin-bottom: 1rem;">
+                    <div class="card-body">
+                        <h4>تقرير ${rep.id || ''}</h4>
+                        <p>${rep.description || 'تقرير عام'}</p>
+                        <small>${rep.created_at || ''}</small>
+                    </div>
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        list.innerHTML = `<div class="error">خطأ: ${error.message}</div>`;
+    }
+}
+
+async function generateReport() {
+    try {
+        const response = await fetch(CONFIG.API_BASE_URL + '/export/pdf');
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `report_${Date.now()}.pdf`;
+        a.click();
+    } catch (error) {
+        alert(`خطأ: ${error.message}`);
+    }
+}
+
+async function exportReports() {
+    try {
+        const response = await fetch(CONFIG.API_BASE_URL + '/reports/export');
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `data_${Date.now()}.xlsx`;
+        a.click();
+    } catch (error) {
+        alert(`خطأ: ${error.message}`);
+    }
+}
+
+// ===========================================
+// Theme & System Status
+// ===========================================
+function toggleTheme() {
+    state.theme = state.theme === 'light' ? 'dark' : 'light';
+    document.body.classList.toggle('dark-theme');
+    localStorage.setItem('theme', state.theme);
+    document.getElementById('themeIcon').textContent = state.theme === 'dark' ? '☀️' : '🌙';
+}
+
+function toggleLanguage() {
+    state.language = state.language === 'ar' ? 'en' : 'ar';
+    localStorage.setItem('language', state.language);
+    document.getElementById('langText').textContent = state.language === 'ar' ? 'EN' : 'عر';
+    // TODO: Implement full i18n
+}
+
+async function checkSystemStatus() {
+    try {
+        const status = await apiFetch('/system/status');
+        const badge = document.getElementById('systemStatus');
+        if (status.llmAvailable && status.cctvAvailable) {
+            badge.innerHTML = '<span class="status-dot"></span><span>متصل</span>';
+            badge.style.background = 'var(--success)';
+        } else {
+            badge.innerHTML = '<span class="status-dot"></span><span>محدود</span>';
+            badge.style.background = 'var(--warning)';
+        }
+    } catch (error) {
+        const badge = document.getElementById('systemStatus');
+        badge.innerHTML = '<span class="status-dot"></span><span>غير متصل</span>';
+        badge.style.background = 'var(--danger)';
+    }
+}
+
+// ===========================================
+// Initialization
+// ===========================================
+document.addEventListener('DOMContentLoaded', () => {
+    // Apply saved theme
+    if (state.theme === 'dark') {
+        document.body.classList.add('dark-theme');
+        document.getElementById('themeIcon').textContent = '☀️';
+    }
+    
+    // Setup event listeners
+    document.querySelectorAll('.nav-item').forEach(nav => {
+        nav.addEventListener('click', (e) => {
+            e.preventDefault();
+            const page = nav.getAttribute('data-page');
+            if (page) navigateTo(page);
+        });
+    });
+    
+    document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+    document.getElementById('langToggle').addEventListener('click', toggleLanguage);
+    
+    // Setup chat input
+    const chatInput = document.getElementById('chatInput');
+    if (chatInput) {
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendChat();
+            }
+        });
+    }
+    
+    // Setup detection upload
+    setupDetectionUpload();
+    
+    // Check system status
+    checkSystemStatus();
+    setInterval(checkSystemStatus, 30000); // Every 30 seconds
+    
+    // Load dashboard
+    loadDashboard();
+    
+    console.log('✅ HAZM TUWAIQ initialized');
+});

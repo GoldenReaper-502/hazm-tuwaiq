@@ -339,6 +339,63 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/system/status")
+def system_status():
+    """System status endpoint - returns availability of LLM and CCTV services"""
+    try:
+        # Check LLM availability
+        llm_available = False
+        llm_error = None
+        llm_provider = None
+        try:
+            from backend import llm
+            # Check if we have API keys configured (priority: Gemini > OpenAI > Anthropic)
+            import os
+            if os.getenv("GEMINI_API_KEY"):
+                llm_available = True
+                llm_provider = "Google Gemini (FREE)"
+            elif os.getenv("OPENAI_API_KEY"):
+                llm_available = True
+                llm_provider = "OpenAI"
+            elif os.getenv("ANTHROPIC_API_KEY"):
+                llm_available = True
+                llm_provider = "Anthropic Claude"
+            else:
+                llm_error = "No LLM API keys configured. Get FREE key at https://aistudio.google.com/app/apikey"
+        except Exception as e:
+            llm_error = str(e)
+        
+        # Check CCTV availability
+        cctv_available = False
+        cctv_error = None
+        try:
+            import cv2
+            cctv_available = True
+        except ImportError as e:
+            cctv_error = "OpenCV not available"
+        except Exception as e:
+            cctv_error = str(e)
+        
+        return {
+            "llm_available": llm_available,
+            "llm_provider": llm_provider,
+            "llm_error": llm_error,
+            "cctv_available": cctv_available,
+            "cctv_error": cctv_error,
+            "timestamp": utc_now()
+        }
+    except Exception as e:
+        logger.exception(f"System status check failed: {e}")
+        return {
+            "llm_available": False,
+            "llm_provider": None,
+            "llm_error": "System check failed",
+            "cctv_available": False,
+            "cctv_error": "System check failed",
+            "timestamp": utc_now()
+        }
+
+
 # =========================
 # Auth (MVP)
 # =========================
@@ -1219,33 +1276,57 @@ def generate_chat_response(
     session_history: List[Dict[str, Any]]
 ) -> str:
     """
-    Generate a chat response based on the user message and context.
-    
-    في الإنتاج:
-    - ادعُ خدمة LLM (OpenAI GPT, Anthropic Claude, etc.)
-    - استخدم Detection context في system prompt
-    - احفظ conversation history
+    Generate a chat response using real LLM integration.
+    Returns structured answer or error message.
     """
     
-    # Prefer a real LLM if configured
+    # Try real LLM first
     try:
         from . import llm
         det_ctx = detection_result.dict() if detection_result is not None else None
-        llm_resp = llm.generate_llm_response(user_message=user_message, detection_context=det_ctx, session_history=session_history)
-        if llm_resp:
-            return llm_resp
-    except Exception:
-        # If LLM integration fails, fall back to simple rules below
-        pass
+        llm_resp = llm.generate_llm_response(
+            user_message=user_message, 
+            detection_context=det_ctx, 
+            session_history=session_history
+        )
+        
+        # Handle structured response
+        if isinstance(llm_resp, dict):
+            if "answer" in llm_resp:
+                # Successful LLM response
+                answer = llm_resp["answer"]
+                if llm_resp.get("sources"):
+                    answer += f"\n\n[Powered by {llm_resp['sources'][0]}]"
+                return answer
+            elif "error" in llm_resp:
+                # LLM error - return helpful message
+                error_msg = f"⚠️ AI Chat Error: {llm_resp['error']}\n\n"
+                error_msg += f"💡 How to fix: {llm_resp.get('how_to_fix', 'Contact administrator')}\n\n"
+                error_msg += f"🔍 Trace ID: {llm_resp.get('trace_id', 'unknown')}"
+                return error_msg
+    except Exception as e:
+        logger.error(f"LLM integration error: {e}")
+        # Fall through to fallback
 
-    # Fallback simple rule-based response
+    # Fallback rule-based response
+    fallback_prefix = "[Fallback Mode - Configure OPENAI_API_KEY for AI responses]\n\n"
+    
     if "detection" in user_message.lower():
-        return f"Latest detection shows: {len(detection_result.objects) if detection_result else 0} objects detected. Please refer to the detection panel for details."
+        count = len(detection_result.objects) if detection_result else 0
+        return fallback_prefix + f"Latest detection shows: {count} objects detected. Please refer to the detection panel for details."
     if "safety" in user_message.lower():
-        return "Safety is our top priority. Always use proper protective equipment and follow safety protocols."
+        return fallback_prefix + "Safety is our top priority. Always use proper protective equipment and follow safety protocols."
     if "incident" in user_message.lower():
-        return "To report an incident, click the 'Create Incident' button and fill in the required details."
-    return f"Thank you for your question: '{user_message}'. The system is ready to assist with hazard detection, incident reporting, and risk assessment. How can I help further?"
+        return fallback_prefix + "To report an incident, click the 'Create Incident' button and fill in the required details."
+    if "help" in user_message.lower() or "guide" in user_message.lower():
+        return fallback_prefix + "HAZM TUWAIQ Safety Platform features:\n" + \
+               "• Real-time hazard detection\n" + \
+               "• Incident reporting and tracking\n" + \
+               "• Risk assessment and compliance\n" + \
+               "• Advanced analytics and reporting\n\n" + \
+               "Ask me about any safety topic!"
+    
+    return fallback_prefix + f"Thank you for your question: '{user_message}'. The system is ready to assist with hazard detection, incident reporting, and risk assessment. Configure AI integration for intelligent responses."
 
 
 @app.get("/chat/{session_id}", response_model=List[ChatResponse])

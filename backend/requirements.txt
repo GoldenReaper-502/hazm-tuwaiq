@@ -13,8 +13,9 @@ pyjwt>=2.8.0  # JWT tokens
 # AI and ML - Real Computer Vision
 ultralytics>=8.0.0  # YOLOv8 for object detection and pose estimation
 typing-extensions>=4.7.1
-openai>=0.27.0  # LLM integration
-anthropic>=0.32.0  # Claude integration
+google-generativeai>=0.3.0  # Google Gemini - FREE LLM!
+openai>=0.27.0  # LLM integration (paid)
+anthropic>=0.32.0  # Claude integration (paid)
 torch>=2.0.0  # Required for YOLOv8
 torchvision>=0.15.0  # Required for YOLOv8
 

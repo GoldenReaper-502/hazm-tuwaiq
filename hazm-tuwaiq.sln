@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AspNetCore", "AspNetCore", "{D70FA35D-25AA-0A46-E46A-25A48C79F5AD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartSafety.API", "AspNetCore\SmartSafety.API\SmartSafety.API.csproj", "{9128E47E-D6F6-FBFD-C337-47F60FDC3D3A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9128E47E-D6F6-FBFD-C337-47F60FDC3D3A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9128E47E-D6F6-FBFD-C337-47F60FDC3D3A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9128E47E-D6F6-FBFD-C337-47F60FDC3D3A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9128E47E-D6F6-FBFD-C337-47F60FDC3D3A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{9128E47E-D6F6-FBFD-C337-47F60FDC3D3A} = {D70FA35D-25AA-0A46-E46A-25A48C79F5AD}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {ACE8F0FB-5D7B-43F9-BD81-619DB8E4FB19}
+	EndGlobalSection
+EndGlobal

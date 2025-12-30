@@ -1,215 +1,381 @@
-6<!doctype html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>حزم طويق — منصة إدارة المخاطر والسلامة</title>
-  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
-  <link rel="stylesheet" href="./styles.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>السلامة الذكية | Smart Safety - منصة الذكاء الاصطناعي للسلامة</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
-  <div class="bg"></div>
-  <div class="particles"></div>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <h1 class="logo-text">السلامة الذكية</h1>
+                <p class="logo-subtitle">SMART SAFETY</p>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <span>☰</span>
+            </button>
+        </div>
 
-  <header class="header">
-    <div class="brand">
-      <div class="logo-container">
-        <img class="logo" src="./assets/logo.svg" alt="حزم طويق" />
-      </div>
-      <div class="brand-text">
-        <h1 class="brand-title">حزم طويق</h1>
-        <p class="subtitle">بالحزم نواجه المخاطر... وبطويق نصمد</p>
-      </div>
+        <nav class="sidebar-nav">
+            <a href="#dashboard" class="nav-item active" data-page="dashboard">
+                <span class="nav-icon">📊</span>
+                <span class="nav-text">لوحة التحكم</span>
+            </a>
+            <a href="#cameras" class="nav-item" data-page="cameras">
+                <span class="nav-icon">📹</span>
+                <span class="nav-text">الكاميرات</span>
+            </a>
+            <a href="#detection" class="nav-item" data-page="detection">
+                <span class="nav-icon">🔍</span>
+                <span class="nav-text">الكشف والقراءة</span>
+            </a>
+            <a href="#chatbot" class="nav-item" data-page="chatbot">
+                <span class="nav-icon">💬</span>
+                <span class="nav-text">المساعد الذكي</span>
+            </a>
+            <a href="#incidents" class="nav-item" data-page="incidents">
+                <span class="nav-icon">🚨</span>
+                <span class="nav-text">الحوادث</span>
+            </a>
+            <a href="#risk" class="nav-item" data-page="risk">
+                <span class="nav-icon">⚠️</span>
+                <span class="nav-text">تقييم المخاطر</span>
+            </a>
+            <a href="#inspections" class="nav-item" data-page="inspections">
+                <span class="nav-icon">📋</span>
+                <span class="nav-text">التفتيش</span>
+            </a>
+            <a href="#reports" class="nav-item" data-page="reports">
+                <span class="nav-icon">📄</span>
+                <span class="nav-text">التقارير</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <button class="theme-toggle" id="themeToggle">
+                <span id="themeIcon">🌙</span>
+            </button>
+            <button class="lang-toggle" id="langToggle">
+                <span id="langText">EN</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="page-header">
+            <div class="header-left">
+                <h2 class="page-title" id="pageTitle">لوحة التحكم</h2>
+                <div class="breadcrumb">
+                    <span>الرئيسية</span>
+                    <span class="separator">/</span>
+                    <span id="breadcrumbPage">لوحة التحكم</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="status-badge" id="systemStatus">
+                    <span class="status-dot"></span>
+                    <span>جاري التحميل...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Page -->
+        <div class="page active" id="dashboardPage">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📹</div>
+                    <div class="stat-info">
+                        <h3 id="camerasCount">-</h3>
+                        <p>الكاميرات النشطة</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🔍</div>
+                    <div class="stat-info">
+                        <h3 id="detectionsCount">-</h3>
+                        <p>الكشوفات اليوم</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🚨</div>
+                    <div class="stat-info">
+                        <h3 id="incidentsCount">-</h3>
+                        <p>الحوادث المفتوحة</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💬</div>
+                    <div class="stat-info">
+                        <h3 id="chatsCount">-</h3>
+                        <p>المحادثات</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>الحوادث الأخيرة</h3>
+                        <button class="btn-link" onclick="navigateTo('incidents')">عرض الكل</button>
+                    </div>
+                    <div class="card-body" id="recentIncidents">
+                        <div class="loading">جاري التحميل...</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>الكشوفات الأخيرة</h3>
+                        <button class="btn-link" onclick="navigateTo('detection')">عرض الكل</button>
+                    </div>
+                    <div class="card-body" id="recentDetections">
+                        <div class="loading">جاري التحميل...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cameras Page -->
+        <div class="page" id="camerasPage">
+            <div class="page-actions">
+                <button class="btn btn-primary" onclick="showAddCameraModal()">
+                    <span>➕</span> إضافة كاميرا جديدة
+                </button>
+            </div>
+
+            <div class="cameras-grid" id="camerasGrid">
+                <div class="loading">جاري تحميل الكاميرات...</div>
+            </div>
+        </div>
+
+        <!-- Detection Page -->
+        <div class="page" id="detectionPage">
+            <div class="card">
+                <div class="card-header">
+                    <h3>رفع صورة للكشف والقراءة</h3>
+                </div>
+                <div class="card-body">
+                    <div class="upload-area" id="uploadArea">
+                        <input type="file" id="detectionFile" accept="image/*" hidden>
+                        <div class="upload-content">
+                            <span class="upload-icon">📁</span>
+                            <p>اضغط أو اسحب صورة هنا</p>
+                            <button class="btn btn-secondary" onclick="document.getElementById('detectionFile').click()">
+                                اختر صورة
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="detectionPreview" class="detection-preview" style="display:none;">
+                        <img id="previewImage" alt="Preview">
+                    </div>
+
+                    <button class="btn btn-primary" id="detectBtn" onclick="detectObjects()" style="display:none;">
+                        <span>🔍</span> كشف الأشياء
+                    </button>
+
+                    <div id="detectionResults" class="detection-results"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>سجل الكشوفات</h3>
+                </div>
+                <div class="card-body">
+                    <div id="detectionHistory" class="detection-history">
+                        <div class="loading">جاري التحميل...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chatbot Page -->
+        <div class="page" id="chatbotPage">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <h3>💬 المساعد الذكي للسلامة</h3>
+                    <button class="btn-link" onclick="clearChat()">مسح المحادثة</button>
+                </div>
+                
+                <div class="chat-messages" id="chatMessages">
+                    <div class="chat-welcome">
+                        <h4>مرحباً بك في المساعد الذكي!</h4>
+                        <p>أنا هنا لمساعدتك في كل ما يتعلق بالسلامة والصحة المهنية</p>
+                        <div class="quick-questions">
+                            <button class="quick-btn" onclick="sendQuickQuestion('ما هي إجراءات السلامة الأساسية؟')">
+                                إجراءات السلامة
+                            </button>
+                            <button class="quick-btn" onclick="sendQuickQuestion('كيف أبلغ عن حادثة؟')">
+                                الإبلاغ عن حادثة
+                            </button>
+                            <button class="quick-btn" onclick="sendQuickQuestion('ما هي معايير ISO 45001؟')">
+                                معايير ISO 45001
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chat-input-container">
+                    <textarea 
+                        id="chatInput" 
+                        class="chat-input" 
+                        placeholder="اكتب سؤالك هنا..."
+                        rows="1"
+                    ></textarea>
+                    <button class="btn btn-primary send-btn" onclick="sendChat()">
+                        <span>➤</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Incidents Page -->
+        <div class="page" id="incidentsPage">
+            <div class="page-actions">
+                <button class="btn btn-primary" onclick="showAddIncidentModal()">
+                    <span>➕</span> الإبلاغ عن حادثة
+                </button>
+            </div>
+
+            <div class="filters">
+                <select class="filter-select" id="severityFilter" onchange="filterIncidents()">
+                    <option value="">كل الحوادث</option>
+                    <option value="critical">حرجة</option>
+                    <option value="high">عالية</option>
+                    <option value="medium">متوسطة</option>
+                    <option value="low">منخفضة</option>
+                </select>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div id="incidentsList" class="incidents-list">
+                        <div class="loading">جاري تحميل الحوادث...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Assessment Page -->
+        <div class="page" id="riskPage">
+            <div class="page-actions">
+                <button class="btn btn-primary" onclick="showAddRiskModal()">
+                    <span>➕</span> تقييم مخاطر جديد
+                </button>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div id="riskList" class="risk-list">
+                        <div class="loading">جاري تحميل تقييمات المخاطر...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inspections Page -->
+        <div class="page" id="inspectionsPage">
+            <div class="page-actions">
+                <button class="btn btn-primary" onclick="showAddInspectionModal()">
+                    <span>➕</span> تفتيش جديد
+                </button>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div id="inspectionsList" class="inspections-list">
+                        <div class="loading">جاري تحميل التفتيشات...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Page -->
+        <div class="page" id="reportsPage">
+            <div class="page-actions">
+                <button class="btn btn-primary" onclick="generateReport()">
+                    <span>📄</span> توليد تقرير جديد
+                </button>
+                <button class="btn btn-secondary" onclick="exportReports()">
+                    <span>📊</span> تصدير البيانات
+                </button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>التقارير المتاحة</h3>
+                </div>
+                <div class="card-body">
+                    <div id="reportsList" class="reports-list">
+                        <div class="loading">جاري تحميل التقارير...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modals -->
+    <div class="modal" id="addCameraModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>إضافة كاميرا جديدة</h3>
+                <button class="modal-close" onclick="closeModal('addCameraModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>اسم الكاميرا</label>
+                    <input type="text" id="cameraName" class="form-input" placeholder="مثال: كاميرا المدخل الرئيسي">
+                </div>
+                <div class="form-group">
+                    <label>رابط RTSP</label>
+                    <input type="text" id="cameraUrl" class="form-input" placeholder="rtsp://...">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('addCameraModal')">إلغاء</button>
+                <button class="btn btn-primary" onclick="addCamera()">إضافة</button>
+            </div>
+        </div>
     </div>
 
-    <div class="cfg">
-      <div class="field">
-        <label for="apiUrl">🔗 API URL</label>
-        <input id="apiUrl" type="url" placeholder="https://hazm-tuwaiq-xxxx.onrender.com" />
-      </div>
-
-      <div class="field">
-        <label for="apiKey">🔐 API KEY</label>
-        <input id="apiKey" type="password" placeholder="اختياري إذا عندك حماية" />
-      </div>
-
-      <div class="cfg-actions">
-        <button id="saveCfg" class="btn primary">💾 حفظ الإعدادات</button>
-        <a href="reset-settings.html" class="btn danger" style="text-align: center; text-decoration: none;">🔧 إعادة الضبط</a>
-      </div>
+    <div class="modal" id="addIncidentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>الإبلاغ عن حادثة</h3>
+                <button class="modal-close" onclick="closeModal('addIncidentModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>العنوان</label>
+                    <input type="text" id="incidentTitle" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>الوصف</label>
+                    <textarea id="incidentDescription" class="form-input" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>مستوى الخطورة</label>
+                    <select id="incidentSeverity" class="form-input">
+                        <option value="low">منخفض</option>
+                        <option value="medium">متوسط</option>
+                        <option value="high">عالي</option>
+                        <option value="critical">حرج</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('addIncidentModal')">إلغاء</button>
+                <button class="btn btn-primary" onclick="submitIncident()">إرسال</button>
+            </div>
+        </div>
     </div>
-  </header>
 
-  <main class="container">
-    <!-- System Status Section -->
-    <section class="card">
-      <div class="card-head">
-        <h2>حالة النظام</h2>
-        <button id="refreshStatus" class="btn">تحديث</button>
-      </div>
-      <pre id="statusOut" class="pre muted">اضغط "تحديث" لعرض الحالة</pre>
-    </section>
-
-    <!-- Camera & Detection Section -->
-    <section class="card">
-      <div class="card-head">
-        <h2>📷 الكاميرا والكشف</h2>
-      </div>
-
-      <div id="cameraStatus" class="status-badge">
-        <span id="cameraStatusText">غير متصل</span>
-      </div>
-
-      <!-- Camera Controls -->
-      <div class="controls">
-        <div class="field">
-          <label for="deviceSelect">اختر جهاز الكاميرا</label>
-          <select id="deviceSelect">
-            <option value="">جاري البحث...</option>
-          </select>
-        </div>
-
-        <div class="actions">
-          <button id="startCamera" class="btn success">ابدأ الكاميرا</button>
-          <button id="stopCamera" class="btn danger" disabled>أوقف الكاميرا</button>
-          <button id="retryCamera" class="btn" disabled>إعادة محاولة</button>
-        </div>
-      </div>
-
-      <!-- Video Preview -->
-      <div id="videoContainer" class="video-container" style="display:none;">
-        <video id="cameraVideo" autoplay playsinline muted></video>
-        <canvas id="detectionCanvas"></canvas>
-      </div>
-
-      <!-- Detection Controls -->
-      <div class="controls">
-        <label class="checkbox">
-          <input id="enableDetection" type="checkbox" />
-          تفعيل الكشف التلقائي
-        </label>
-        <span id="detectionStats" class="text-muted">معلومات الكشف تظهر هنا</span>
-      </div>
-
-      <!-- Detection Results -->
-      <div id="detectionResult" class="info-box" style="display:none;">
-        <h3>نتائج الكشف الأخيرة</h3>
-        <pre id="detectionOutput" class="pre muted"></pre>
-        <button id="askAboutDetection" class="btn primary">اسأل عن هذا الكشف</button>
-      </div>
-
-      <pre id="cameraError" class="pre muted" style="display:none;"></pre>
-    </section>
-
-    <!-- Chat Section -->
-    <section class="card">
-      <div class="card-head">
-        <h2>💬 الدردشة والأسئلة</h2>
-        <button id="clearChat" class="btn danger">مسح الدردشة</button>
-      </div>
-
-      <!-- Chat Messages -->
-      <div id="chatMessages" class="chat-box"></div>
-
-      <!-- Chat Input -->
-      <div class="chat-input-group">
-        <textarea 
-          id="chatInput" 
-          class="chat-input" 
-          placeholder="اسأل سؤالك هنا..."
-          rows="2"
-        ></textarea>
-        <button id="sendChat" class="btn primary">إرسال</button>
-      </div>
-
-      <div id="chatStatus" class="text-muted" style="margin-top: 10px;"></div>
-    </section>
-
-    <!-- Incidents Section -->
-    <section class="card">
-      <div class="card-head">
-        <h2>إضافة حادث / بلاغ</h2>
-      </div>
-
-      <div class="grid">
-        <div class="field">
-          <label for="incTitle">العنوان</label>
-          <input id="incTitle" type="text" placeholder="مثال: انزلاق في الممر" />
-        </div>
-
-        <div class="field">
-          <label for="incLocation">الموقع</label>
-          <input id="incLocation" type="text" placeholder="مثال: Gate 3" />
-        </div>
-
-        <div class="field">
-          <label for="incSeverity">الخطورة</label>
-          <select id="incSeverity">
-            <option value="low">منخفضة</option>
-            <option value="medium" selected>متوسطة</option>
-            <option value="high">عالية</option>
-            <option value="critical">حرجة</option>
-          </select>
-        </div>
-
-        <div class="field full">
-          <label for="incDesc">الوصف</label>
-          <textarea id="incDesc" rows="3" placeholder="اكتب تفاصيل البلاغ..."></textarea>
-        </div>
-      </div>
-
-      <div class="actions">
-        <button id="sendIncident" class="btn primary">إرسال</button>
-      </div>
-
-      <pre id="incOut" class="pre muted">سيظهر الرد هنا</pre>
-    </section>
-
-    <!-- Incidents List -->
-    <section class="card">
-      <div class="card-head">
-        <h2>قائمة البلاغات</h2>
-        <button id="refreshIncidents" class="btn">تحديث</button>
-      </div>
-      <div id="incidentsWrap" class="list"></div>
-    </section>
-
-    <!-- Upload Section -->
-    <section class="card">
-      <div class="card-head">
-        <h2>رفع ملف</h2>
-      </div>
-
-      <div class="grid">
-        <div class="field">
-          <label for="uploadTag">Tag (اختياري)</label>
-          <input id="uploadTag" type="text" placeholder="مثال: photo / report" />
-        </div>
-
-        <div class="field full">
-          <label for="uploadFile">اختر ملف</label>
-          <input id="uploadFile" type="file" />
-        </div>
-      </div>
-
-      <div class="actions">
-        <button id="doUpload" class="btn primary">رفع</button>
-      </div>
-
-      <pre id="uploadOut" class="pre muted">سيظهر الرد هنا</pre>
-      <div id="uploadsWrap" class="list"></div>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <span>© Hazm Tuwaiq MVP</span>
-    <a href="#" id="openDocs">Docs</a>
-  </footer>
-
-  <script src="./app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
