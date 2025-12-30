@@ -11,6 +11,16 @@ import sqlite3
 import os
 from typing import Any, Dict, List, Optional
 
+
+def _get_cv2():
+    """Lazy import cv2 to prevent startup crashes"""
+    try:
+        import cv2
+        return cv2
+    except ImportError as e:
+        raise RuntimeError(f"OpenCV not available: {e}")
+
+
 try:
     import cv2
     CV2_AVAILABLE = True
@@ -125,6 +135,7 @@ class CameraWorker(threading.Thread):
 
                 # Open capture if needed
                 if self.capture is None or not self.capture.isOpened():
+                    cv2 = _get_cv2()  # Lazy import
                     self.capture = cv2.VideoCapture(self.camera.rtsp_url, cv2.CAP_FFMPEG)
                     # set small timeout / buffer
                     time.sleep(0.5)
@@ -146,6 +157,7 @@ class CameraWorker(threading.Thread):
 
                 # encode frame to JPEG bytes
                 try:
+                    cv2 = _get_cv2()  # Lazy import
                     ok, buf = cv2.imencode('.jpg', frame)
                     if not ok:
                         time.sleep(frame_interval)

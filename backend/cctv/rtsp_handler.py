@@ -3,7 +3,6 @@ HAZM TUWAIQ - RTSP Stream Handler
 Handle RTSP camera streams with robust reconnection
 """
 
-import cv2
 import numpy as np
 from typing import Optional, Dict, Any, Callable
 import logging
@@ -11,6 +10,16 @@ import threading
 import time
 from datetime import datetime
 from queue import Queue, Full
+
+
+def _get_cv2():
+    """Lazy import cv2 to prevent startup crashes"""
+    try:
+        import cv2
+        return cv2
+    except ImportError as e:
+        raise RuntimeError(f"OpenCV not available: {e}. Install with: pip install opencv-python-headless")
+
 
 
 class RTSPHandler:
@@ -65,6 +74,7 @@ class RTSPHandler:
     def connect(self) -> bool:
         """Connect to RTSP stream"""
         try:
+            cv2 = _get_cv2()  # Lazy import
             self.logger.info(f"Connecting to {self.rtsp_url}")
             
             # Open RTSP stream
@@ -218,3 +228,4 @@ class RTSPHandler:
     def __del__(self):
         """Cleanup on deletion"""
         self.stop()
+

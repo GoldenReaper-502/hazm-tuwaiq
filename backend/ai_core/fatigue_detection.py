@@ -3,12 +3,21 @@ HAZM TUWAIQ - Fatigue Detection
 Detect worker fatigue through facial analysis and body language
 """
 
-import cv2
 import numpy as np
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
 import logging
 from collections import deque
+
+
+def _get_cv2():
+    """Lazy import cv2 to prevent startup crashes"""
+    try:
+        import cv2
+        return cv2
+    except ImportError as e:
+        raise RuntimeError(f"OpenCV not available: {e}")
+
 
 try:
     import mediapipe as mp
@@ -67,6 +76,7 @@ class FatigueDetector:
             return self._simulate_fatigue()
         
         try:
+            cv2 = _get_cv2()  # Lazy import
             # Convert to RGB for MediaPipe
             image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             

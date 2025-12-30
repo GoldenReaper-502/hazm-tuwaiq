@@ -3,11 +3,20 @@ HAZM TUWAIQ - Frame Processor
 Process camera frames with AI pipeline
 """
 
-import cv2
 import numpy as np
 from typing import Dict, Any, Optional
 import logging
 from datetime import datetime
+
+
+def _get_cv2():
+    """Lazy import cv2 to prevent startup crashes"""
+    try:
+        import cv2
+        return cv2
+    except ImportError as e:
+        raise RuntimeError(f"OpenCV not available: {e}")
+
 
 # Import AI engines
 import sys
@@ -240,6 +249,7 @@ class FrameProcessor:
         annotated = frame.copy()
         
         try:
+            cv2 = _get_cv2()  # Lazy import
             # Draw detections
             if 'detection' in analysis:
                 for obj in analysis['detection'].get('objects', []):

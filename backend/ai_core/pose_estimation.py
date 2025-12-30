@@ -3,12 +3,21 @@ HAZM TUWAIQ - Pose Estimation Engine
 Detect worker postures, falls, and ergonomic risks using YOLOv8-Pose
 """
 
-import cv2
 import numpy as np
 from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
 import logging
 import math
+
+
+def _get_cv2():
+    """Lazy import cv2 to prevent startup crashes"""
+    try:
+        import cv2
+        return cv2
+    except ImportError as e:
+        raise RuntimeError(f"OpenCV not available: {e}")
+
 
 try:
     from ultralytics import YOLO
