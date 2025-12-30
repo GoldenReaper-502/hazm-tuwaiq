@@ -1,11 +1,11 @@
 services:
-  # Backend API
+  # Backend API (Docker-based)
   - type: web
     name: hazm-backend
-    runtime: python
+    runtime: docker
     plan: free
-    buildCommand: pip install -r backend/requirements.txt
-    startCommand: cd backend && python app.py
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     envVars:
       - key: PORT
         sync: false
