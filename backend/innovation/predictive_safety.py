@@ -1,5 +1,6 @@
-from typing import Dict, List
 from datetime import datetime
+from typing import Dict, List
+
 
 def predict_risk(events: List[Dict]) -> Dict:
     """
@@ -19,5 +20,5 @@ def predict_risk(events: List[Dict]) -> Dict:
     return {
         "predicted_risk": level,
         "score": score,
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }

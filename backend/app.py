@@ -1,25 +1,26 @@
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Dict, List, Optional, Any
-from fastapi import FastAPI, HTTPException, Header, Query, UploadFile, File
-from fastapi.responses import FileResponse, StreamingResponse
-from starlette.concurrency import run_in_threadpool
-from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
-from pathlib import Path
-from threading import Lock
-import ai_engine
-import report_generator
-import export_utils
-import cctv
-import uuid
-from pydantic import BaseModel, Field
-import os
+import base64
 import json
 import logging
-import base64
+import os
+import uuid
+from datetime import datetime
 from io import BytesIO
+from pathlib import Path
+from threading import Lock
+from typing import Any, Dict, List, Optional
+
+import ai_engine
+import cctv
+import export_utils
+import report_generator
+from dotenv import load_dotenv
+from fastapi import FastAPI, File, Header, HTTPException, Query, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, StreamingResponse
+from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
 APP_NAME = "Hazm Tuwaiq API"
 APP_VERSION = "0.1.0"
@@ -29,8 +30,7 @@ APP_VERSION = "0.1.0"
 # =========================
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 logging.basicConfig(
-    level=LOG_LEVEL,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=LOG_LEVEL, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ app.add_middleware(
 async def startup_event():
     """Initialize heavy resources at startup (YOLO model) with optimized loading."""
     import asyncio
-    
+
     # Initialize AI engine in background to avoid blocking startup
     async def init_ai():
         try:
@@ -84,7 +84,7 @@ async def startup_event():
             logger.info("AI engine: YOLO model loaded successfully")
         except Exception as e:
             logger.exception(f"AI engine init failed: {e}")
-    
+
     # Initialize CCTV manager in background
     async def init_cctv():
         try:
@@ -99,7 +99,7 @@ async def startup_event():
                     logger.warning(f"Failed to start camera {cam.get('id')}: {ce}")
         except Exception as e:
             logger.exception(f"CCTV manager init failed: {e}")
-    
+
     # Run initializations in parallel
     asyncio.create_task(init_ai())
     asyncio.create_task(init_cctv())
@@ -131,12 +131,14 @@ def new_id(prefix: str, counter: int) -> str:
 # =========================
 class DetectionRequest(BaseModel):
     """نموذج طلب الكشف - يحتوي على صورة بصيغة base64"""
+
     frame_data: str = Field(..., description="صورة base64 من الكاميرا")
     timestamp: Optional[str] = None
 
 
 class DetectionResult(BaseModel):
     """نموذج نتيجة الكشف"""
+
     id: str
     timestamp: str
     objects: List[Dict[str, Any]] = Field(default_factory=list)
@@ -146,6 +148,7 @@ class DetectionResult(BaseModel):
 
 class ChatMessage(BaseModel):
     """رسالة دردشة واحدة"""
+
     role: str = Field(..., pattern="^(user|assistant)$")
     content: str = Field(..., min_length=1, max_length=5000)
     timestamp: Optional[str] = None
@@ -153,6 +156,7 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     """طلب دردشة - قد يتضمن نتيجة كشف"""
+
     message: str = Field(..., min_length=1, max_length=5000)
     detection_result: Optional[DetectionResult] = None
     session_id: Optional[str] = None
@@ -160,6 +164,7 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     """رد الدردشة"""
+
     id: str
     session_id: str
     user_message: str
@@ -172,13 +177,13 @@ class ChatResponse(BaseModel):
 # In-memory "DB"
 # =========================
 DB: Dict[str, Any] = {
-    "users": [],            # list[User]
-    "incidents": [],        # list[Incident]
-    "risk_assessments": [], # list[RiskAssessment]
-    "inspections": [],      # list[Inspection]
-    "uploads": [],          # list[UploadMeta]
-    "detections": [],       # list[DetectionResult]
-    "chat_sessions": {},    # dict[session_id] = list[ChatResponse]
+    "users": [],  # list[User]
+    "incidents": [],  # list[Incident]
+    "risk_assessments": [],  # list[RiskAssessment]
+    "inspections": [],  # list[Inspection]
+    "uploads": [],  # list[UploadMeta]
+    "detections": [],  # list[DetectionResult]
+    "chat_sessions": {},  # dict[session_id] = list[ChatResponse]
 }
 
 COUNTERS = {
@@ -246,7 +251,9 @@ class IncidentCreate(BaseModel):
     location: Optional[str] = Field(default=None, max_length=120)
     description: Optional[str] = Field(default=None, max_length=2000)
     severity: str = Field(..., pattern="^(low|medium|high|critical)$")
-    category: Optional[str] = Field(default=None, max_length=80)  # near-miss, injury, property damage...
+    category: Optional[str] = Field(
+        default=None, max_length=80
+    )  # near-miss, injury, property damage...
     reported_by: Optional[str] = Field(default=None, max_length=80)  # name or id
     status: str = Field(default="open", pattern="^(open|investigating|closed)$")
 
@@ -308,6 +315,7 @@ class UploadMeta(BaseModel):
 # ---- Reports (Smart) ----
 class Report(BaseModel):
     """Auto-generated safety report from detection."""
+
     id: str
     detection_id: str
     timestamp: str
@@ -348,9 +356,11 @@ def system_status():
         llm_error = None
         llm_provider = None
         try:
-            from backend import llm
             # Check if we have API keys configured (priority: Gemini > OpenAI > Anthropic)
             import os
+
+            from backend import llm
+
             if os.getenv("GEMINI_API_KEY"):
                 llm_available = True
                 llm_provider = "Google Gemini (FREE)"
@@ -364,25 +374,26 @@ def system_status():
                 llm_error = "No LLM API keys configured. Get FREE key at https://aistudio.google.com/app/apikey"
         except Exception as e:
             llm_error = str(e)
-        
+
         # Check CCTV availability
         cctv_available = False
         cctv_error = None
         try:
             import cv2
+
             cctv_available = True
         except ImportError as e:
             cctv_error = "OpenCV not available"
         except Exception as e:
             cctv_error = str(e)
-        
+
         return {
             "llm_available": llm_available,
             "llm_provider": llm_provider,
             "llm_error": llm_error,
             "cctv_available": cctv_available,
             "cctv_error": cctv_error,
-            "timestamp": utc_now()
+            "timestamp": utc_now(),
         }
     except Exception as e:
         logger.exception(f"System status check failed: {e}")
@@ -392,7 +403,7 @@ def system_status():
             "llm_error": "System check failed",
             "cctv_available": False,
             "cctv_error": "System check failed",
-            "timestamp": utc_now()
+            "timestamp": utc_now(),
         }
 
 
@@ -440,7 +451,10 @@ def login(payload: UserLogin, x_api_key: Optional[str] = Header(default=None)):
     require_api_key(x_api_key)
 
     for u in DB["users"]:
-        if u["email"].lower() == payload.email.lower() and u.get("_password") == payload.password:
+        if (
+            u["email"].lower() == payload.email.lower()
+            and u.get("_password") == payload.password
+        ):
             user = User(**{k: v for k, v in u.items() if not k.startswith("_")})
             # MVP token
             token = f"demo-token::{user.id}::{int(datetime.utcnow().timestamp())}"
@@ -452,7 +466,10 @@ def login(payload: UserLogin, x_api_key: Optional[str] = Header(default=None)):
 @app.get("/users", response_model=List[User])
 def list_users(x_api_key: Optional[str] = Header(default=None)):
     require_api_key(x_api_key)
-    return [User(**{k: v for k, v in u.items() if not k.startswith("_")}) for u in DB["users"]]
+    return [
+        User(**{k: v for k, v in u.items() if not k.startswith("_")})
+        for u in DB["users"]
+    ]
 
 
 # =========================
@@ -467,9 +484,15 @@ def get_incident_or_404(incident_id: str) -> Dict[str, Any]:
 
 @app.get("/incidents", response_model=List[Incident])
 def list_incidents(
-    q: Optional[str] = Query(default=None, description="Search in title/description/location"),
-    severity: Optional[str] = Query(default=None, pattern="^(low|medium|high|critical)$"),
-    status: Optional[str] = Query(default=None, pattern="^(open|investigating|closed)$"),
+    q: Optional[str] = Query(
+        default=None, description="Search in title/description/location"
+    ),
+    severity: Optional[str] = Query(
+        default=None, pattern="^(low|medium|high|critical)$"
+    ),
+    status: Optional[str] = Query(
+        default=None, pattern="^(open|investigating|closed)$"
+    ),
     x_api_key: Optional[str] = Header(default=None),
 ):
     require_api_key(x_api_key)
@@ -481,19 +504,23 @@ def list_incidents(
         items = [i for i in items if i["status"] == status]
     if q:
         ql = q.lower()
+
         def hit(i: Dict[str, Any]) -> bool:
             return (
                 ql in (i.get("title") or "").lower()
                 or ql in (i.get("description") or "").lower()
                 or ql in (i.get("location") or "").lower()
             )
+
         items = [i for i in items if hit(i)]
 
     return [Incident(**i) for i in items]
 
 
 @app.post("/incidents", response_model=Incident)
-def create_incident(payload: IncidentCreate, x_api_key: Optional[str] = Header(default=None)):
+def create_incident(
+    payload: IncidentCreate, x_api_key: Optional[str] = Header(default=None)
+):
     require_api_key(x_api_key)
 
     incident_id = new_id("inc", COUNTERS["incident"])
@@ -522,14 +549,20 @@ class IncidentUpdate(BaseModel):
     title: Optional[str] = Field(default=None, min_length=3, max_length=120)
     location: Optional[str] = Field(default=None, max_length=120)
     description: Optional[str] = Field(default=None, max_length=2000)
-    severity: Optional[str] = Field(default=None, pattern="^(low|medium|high|critical)$")
+    severity: Optional[str] = Field(
+        default=None, pattern="^(low|medium|high|critical)$"
+    )
     category: Optional[str] = Field(default=None, max_length=80)
     reported_by: Optional[str] = Field(default=None, max_length=80)
     status: Optional[str] = Field(default=None, pattern="^(open|investigating|closed)$")
 
 
 @app.patch("/incidents/{incident_id}", response_model=Incident)
-def update_incident(incident_id: str, payload: IncidentUpdate, x_api_key: Optional[str] = Header(default=None)):
+def update_incident(
+    incident_id: str,
+    payload: IncidentUpdate,
+    x_api_key: Optional[str] = Header(default=None),
+):
     require_api_key(x_api_key)
 
     item = get_incident_or_404(incident_id)
@@ -562,7 +595,9 @@ def get_ra_or_404(ra_id: str) -> Dict[str, Any]:
 
 @app.get("/risk-assessments", response_model=List[RiskAssessment])
 def list_risk_assessments(
-    risk_level: Optional[str] = Query(default=None, pattern="^(low|medium|high|critical)$"),
+    risk_level: Optional[str] = Query(
+        default=None, pattern="^(low|medium|high|critical)$"
+    ),
     status: Optional[str] = Query(default=None, pattern="^(draft|approved|archived)$"),
     x_api_key: Optional[str] = Header(default=None),
 ):
@@ -577,7 +612,9 @@ def list_risk_assessments(
 
 
 @app.post("/risk-assessments", response_model=RiskAssessment)
-def create_risk_assessment(payload: RiskAssessmentCreate, x_api_key: Optional[str] = Header(default=None)):
+def create_risk_assessment(
+    payload: RiskAssessmentCreate, x_api_key: Optional[str] = Header(default=None)
+):
     require_api_key(x_api_key)
 
     ra_id = new_id("ra", COUNTERS["ra"])
@@ -606,13 +643,19 @@ class RiskAssessmentUpdate(BaseModel):
     location: Optional[str] = Field(default=None, max_length=120)
     hazards: Optional[List[str]] = None
     controls: Optional[List[str]] = None
-    risk_level: Optional[str] = Field(default=None, pattern="^(low|medium|high|critical)$")
+    risk_level: Optional[str] = Field(
+        default=None, pattern="^(low|medium|high|critical)$"
+    )
     owner: Optional[str] = Field(default=None, max_length=80)
     status: Optional[str] = Field(default=None, pattern="^(draft|approved|archived)$")
 
 
 @app.patch("/risk-assessments/{ra_id}", response_model=RiskAssessment)
-def update_risk_assessment(ra_id: str, payload: RiskAssessmentUpdate, x_api_key: Optional[str] = Header(default=None)):
+def update_risk_assessment(
+    ra_id: str,
+    payload: RiskAssessmentUpdate,
+    x_api_key: Optional[str] = Header(default=None),
+):
     require_api_key(x_api_key)
     item = get_ra_or_404(ra_id)
 
@@ -662,7 +705,9 @@ def list_inspections(
 
 
 @app.post("/inspections", response_model=Inspection)
-def create_inspection(payload: InspectionCreate, x_api_key: Optional[str] = Header(default=None)):
+def create_inspection(
+    payload: InspectionCreate, x_api_key: Optional[str] = Header(default=None)
+):
     require_api_key(x_api_key)
 
     ins_id = new_id("ins", COUNTERS["inspection"])
@@ -695,7 +740,11 @@ class InspectionUpdate(BaseModel):
 
 
 @app.patch("/inspections/{inspection_id}", response_model=Inspection)
-def update_inspection(inspection_id: str, payload: InspectionUpdate, x_api_key: Optional[str] = Header(default=None)):
+def update_inspection(
+    inspection_id: str,
+    payload: InspectionUpdate,
+    x_api_key: Optional[str] = Header(default=None),
+):
     require_api_key(x_api_key)
     item = get_inspection_or_404(inspection_id)
 
@@ -707,7 +756,9 @@ def update_inspection(inspection_id: str, payload: InspectionUpdate, x_api_key: 
 
 
 @app.delete("/inspections/{inspection_id}", response_model=ApiMessage)
-def delete_inspection(inspection_id: str, x_api_key: Optional[str] = Header(default=None)):
+def delete_inspection(
+    inspection_id: str, x_api_key: Optional[str] = Header(default=None)
+):
     require_api_key(x_api_key)
 
     before = len(DB["inspections"])
@@ -752,6 +803,7 @@ def list_uploads(x_api_key: Optional[str] = Header(default=None)):
     require_api_key(x_api_key)
     return [UploadMeta(**u) for u in DB["uploads"]]
 
+
 # =========================
 # Detection (AI / Camera)
 # =========================
@@ -759,8 +811,12 @@ def list_uploads(x_api_key: Optional[str] = Header(default=None)):
 async def detect_frame(
     payload: DetectionRequest,
     tracked: bool = Query(False, description="Assign track ids when possible"),
-    annotate: bool = Query(False, description="Return annotated JPEG as base64 in raw.annotated_b64"),
-    camera_id: Optional[str] = Query(None, description="Optional camera id for tracking context"),
+    annotate: bool = Query(
+        False, description="Return annotated JPEG as base64 in raw.annotated_b64"
+    ),
+    camera_id: Optional[str] = Query(
+        None, description="Optional camera id for tracking context"
+    ),
     x_api_key: Optional[str] = Header(default=None),
 ):
     """
@@ -769,11 +825,13 @@ async def detect_frame(
     - Returns detection results
     """
     require_api_key(x_api_key)
-    
+
     global LAST_DETECTION
-    
+
     try:
-        logger.info(f"Received detection request: approx {len(payload.frame_data)} base64 chars")
+        logger.info(
+            f"Received detection request: approx {len(payload.frame_data)} base64 chars"
+        )
 
         # Validate base64 data
         try:
@@ -786,7 +844,14 @@ async def detect_frame(
         conf = float(os.getenv("YOLO_CONF", "0.25"))
         # prefer enhanced API if available
         if hasattr(ai_engine, "detect_frame_enhanced"):
-            result = await run_in_threadpool(ai_engine.detect_frame_enhanced, image_data, conf, bool(tracked), bool(annotate), camera_id)
+            result = await run_in_threadpool(
+                ai_engine.detect_frame_enhanced,
+                image_data,
+                conf,
+                bool(tracked),
+                bool(annotate),
+                camera_id,
+            )
         else:
             result = await run_in_threadpool(ai_engine.detect_frame, image_data, conf)
 
@@ -802,30 +867,36 @@ async def detect_frame(
             raw_response={
                 "model": result.get("model", "baseline"),
             },
-            is_valid=True
+            is_valid=True,
         )
 
         DB["detections"].append(detection.dict())
         LAST_DETECTION = detection
-        
+
         # Auto-generate report if risk threshold exceeded
         if detection.objects:
             try:
-                risk_threshold = float(os.getenv("REPORT_RISK_THRESHOLD", "0.25"))  # Lower threshold to trigger on moderate detections
+                risk_threshold = float(
+                    os.getenv("REPORT_RISK_THRESHOLD", "0.25")
+                )  # Lower threshold to trigger on moderate detections
                 generated_report = report_generator.generate_report(
                     detection_id=detection.id,
                     objects=detection.objects,
                     location=os.getenv("SITE_LOCATION", "Default Site"),
-                    timestamp=timestamp
+                    timestamp=timestamp,
                 )
                 if generated_report.get("risk_score", 0) >= risk_threshold:
                     with REPORTS_LOCK:
                         REPORTS.append(generated_report)
-                    logger.info(f"Auto-generated report: {generated_report['id']} (risk: {generated_report['risk_level']})")
+                    logger.info(
+                        f"Auto-generated report: {generated_report['id']} (risk: {generated_report['risk_level']})"
+                    )
             except Exception as e:
                 logger.warning(f"Failed to auto-generate report: {e}")
 
-        logger.info(f"Detection completed: {det_id} - {len(detection.objects)} objects detected")
+        logger.info(
+            f"Detection completed: {det_id} - {len(detection.objects)} objects detected"
+        )
         return detection
 
     except HTTPException:
@@ -859,7 +930,9 @@ def get_last_detection(x_api_key: Optional[str] = Header(default=None)):
 
 
 @app.post("/cctv/cameras")
-def create_camera(payload: Dict[str, Any], x_api_key: Optional[str] = Header(default=None)):
+def create_camera(
+    payload: Dict[str, Any], x_api_key: Optional[str] = Header(default=None)
+):
     """Register a new camera. Body: name, rtsp_url, fps (optional), zones (optional), rules (optional)"""
     require_api_key(x_api_key)
     try:
@@ -935,7 +1008,11 @@ def get_camera_rules(camera_id: str, x_api_key: Optional[str] = Header(default=N
 
 
 @app.post("/cctv/cameras/{camera_id}/rules")
-def set_camera_rules(camera_id: str, payload: Dict[str, Any], x_api_key: Optional[str] = Header(default=None)):
+def set_camera_rules(
+    camera_id: str,
+    payload: Dict[str, Any],
+    x_api_key: Optional[str] = Header(default=None),
+):
     """Set/replace camera rules (JSON)."""
     require_api_key(x_api_key)
     try:
@@ -952,19 +1029,31 @@ def set_camera_rules(camera_id: str, payload: Dict[str, Any], x_api_key: Optiona
 
 
 @app.get("/cctv/cameras/{camera_id}/detections")
-def camera_detections(camera_id: str, limit: int = Query(100, ge=1, le=1000), x_api_key: Optional[str] = Header(default=None)):
+def camera_detections(
+    camera_id: str,
+    limit: int = Query(100, ge=1, le=1000),
+    x_api_key: Optional[str] = Header(default=None),
+):
     """Query recent detections for a specific camera (SQLite-backed)."""
     require_api_key(x_api_key)
     try:
         items = cctv.query_detections(camera_id=camera_id, limit=limit)
-        return {"ok": True, "camera_id": camera_id, "count": len(items), "detections": items}
+        return {
+            "ok": True,
+            "camera_id": camera_id,
+            "count": len(items),
+            "detections": items,
+        }
     except Exception as e:
         logger.error(f"Camera detections query error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/cctv/detections")
-def all_detections(limit: int = Query(200, ge=1, le=2000), x_api_key: Optional[str] = Header(default=None)):
+def all_detections(
+    limit: int = Query(200, ge=1, le=2000),
+    x_api_key: Optional[str] = Header(default=None),
+):
     """Query recent detections across all cameras."""
     require_api_key(x_api_key)
     try:
@@ -976,19 +1065,31 @@ def all_detections(limit: int = Query(200, ge=1, le=2000), x_api_key: Optional[s
 
 
 @app.get("/cctv/cameras/{camera_id}/events")
-def camera_events(camera_id: str, limit: int = Query(100, ge=1, le=1000), x_api_key: Optional[str] = Header(default=None)):
+def camera_events(
+    camera_id: str,
+    limit: int = Query(100, ge=1, le=1000),
+    x_api_key: Optional[str] = Header(default=None),
+):
     """Query recent behavior events/alerts for a camera."""
     require_api_key(x_api_key)
     try:
         items = cctv.query_alerts(camera_id=camera_id, limit=limit)
-        return {"ok": True, "camera_id": camera_id, "count": len(items), "events": items}
+        return {
+            "ok": True,
+            "camera_id": camera_id,
+            "count": len(items),
+            "events": items,
+        }
     except Exception as e:
         logger.error(f"Camera events query error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/cctv/events")
-def all_events(limit: int = Query(200, ge=1, le=2000), x_api_key: Optional[str] = Header(default=None)):
+def all_events(
+    limit: int = Query(200, ge=1, le=2000),
+    x_api_key: Optional[str] = Header(default=None),
+):
     """Query recent events across all cameras."""
     require_api_key(x_api_key)
     try:
@@ -1011,7 +1112,11 @@ def get_camera_zones(camera_id: str, x_api_key: Optional[str] = Header(default=N
 
 
 @app.post("/cctv/cameras/{camera_id}/zones")
-def add_camera_zone(camera_id: str, payload: Dict[str, Any], x_api_key: Optional[str] = Header(default=None)):
+def add_camera_zone(
+    camera_id: str,
+    payload: Dict[str, Any],
+    x_api_key: Optional[str] = Header(default=None),
+):
     require_api_key(x_api_key)
     try:
         mgr = cctv.get_manager()
@@ -1035,7 +1140,12 @@ def add_camera_zone(camera_id: str, payload: Dict[str, Any], x_api_key: Optional
 
 
 @app.put("/cctv/cameras/{camera_id}/zones/{zone_id}")
-def update_camera_zone(camera_id: str, zone_id: str, payload: Dict[str, Any], x_api_key: Optional[str] = Header(default=None)):
+def update_camera_zone(
+    camera_id: str,
+    zone_id: str,
+    payload: Dict[str, Any],
+    x_api_key: Optional[str] = Header(default=None),
+):
     require_api_key(x_api_key)
     mgr = cctv.get_manager()
     cams = mgr.list_cameras()
@@ -1058,7 +1168,9 @@ def update_camera_zone(camera_id: str, zone_id: str, payload: Dict[str, Any], x_
 
 
 @app.delete("/cctv/cameras/{camera_id}/zones/{zone_id}")
-def delete_camera_zone(camera_id: str, zone_id: str, x_api_key: Optional[str] = Header(default=None)):
+def delete_camera_zone(
+    camera_id: str, zone_id: str, x_api_key: Optional[str] = Header(default=None)
+):
     require_api_key(x_api_key)
     mgr = cctv.get_manager()
     cams = mgr.list_cameras()
@@ -1076,8 +1188,12 @@ def delete_camera_zone(camera_id: str, zone_id: str, x_api_key: Optional[str] = 
 
 
 @app.post("/cctv/cameras/{camera_id}/webhook")
-def set_camera_webhook(camera_id: str, payload: Dict[str, Any], x_api_key: Optional[str] = Header(default=None)):
-    """Set webhook_url in camera rules. Body: {"webhook_url": "https://..."} """
+def set_camera_webhook(
+    camera_id: str,
+    payload: Dict[str, Any],
+    x_api_key: Optional[str] = Header(default=None),
+):
+    """Set webhook_url in camera rules. Body: {"webhook_url": "https://..."}"""
     require_api_key(x_api_key)
     try:
         url = payload.get("webhook_url")
@@ -1109,34 +1225,36 @@ async def chat(
 ):
     """
     Chat endpoint - answer questions, optionally with detection context.
-    
+
     - Ensures exactly ONE response per question
     - Saves to session history
     - Can attach last detection result
     """
     require_api_key(x_api_key)
-    
+
     try:
         logger.info(f"Chat request: {payload.message[:50]}...")
-        
+
         # Get or create session
-        session_id = payload.session_id or f"session_{int(datetime.utcnow().timestamp())}"
+        session_id = (
+            payload.session_id or f"session_{int(datetime.utcnow().timestamp())}"
+        )
         if session_id not in DB["chat_sessions"]:
             DB["chat_sessions"][session_id] = []
-        
+
         # Generate response (mock for now)
         # في الإنتاج استدعي خدمة LLM/Chat حقيقية (GPT, Claude, etc.)
         assistant_response = generate_chat_response(
             user_message=payload.message,
             detection_result=payload.detection_result,
-            session_history=DB["chat_sessions"][session_id]
+            session_history=DB["chat_sessions"][session_id],
         )
-        
+
         chat_id = new_id("chat", COUNTERS["chat_msg"])
         COUNTERS["chat_msg"] += 1
-        
+
         timestamp = utc_now()
-        
+
         # Create response object
         response = ChatResponse(
             id=chat_id,
@@ -1146,13 +1264,13 @@ async def chat(
             timestamp=timestamp,
             detection_attached=payload.detection_result is not None,
         )
-        
+
         # Store in session history
         DB["chat_sessions"][session_id].append(response.dict())
-        
+
         logger.info(f"Chat response generated: {chat_id}")
         return response
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -1161,7 +1279,9 @@ async def chat(
 
 
 @app.post("/report", response_model=ApiMessage)
-def create_report(payload: Dict[str, Any], x_api_key: Optional[str] = Header(default=None)):
+def create_report(
+    payload: Dict[str, Any], x_api_key: Optional[str] = Header(default=None)
+):
     """Save a quick incident/near-miss report to file-backed storage."""
     require_api_key(x_api_key)
     try:
@@ -1210,45 +1330,59 @@ def list_auto_reports(x_api_key: Optional[str] = Header(default=None)):
 @app.get("/reports/export")
 def export_reports(
     format: str = Query("json", regex="^(json|csv|pdf|excel)$"),
-    x_api_key: Optional[str] = Header(default=None)
+    x_api_key: Optional[str] = Header(default=None),
 ):
     """Export all reports in requested format (json, csv, pdf, excel)."""
     require_api_key(x_api_key)
     try:
         with REPORTS_LOCK:
             reports_copy = REPORTS.copy()
-        
+
         if format == "json":
             json_text = export_utils.export_to_json(reports_copy)
             return StreamingResponse(
                 iter([json_text]),
                 media_type="application/json",
-                headers={"Content-Disposition": "attachment; filename=all_reports.json"}
+                headers={
+                    "Content-Disposition": "attachment; filename=all_reports.json"
+                },
             )
         elif format == "csv":
             csv_text = export_utils.export_to_csv(reports_copy)
             return StreamingResponse(
                 iter([csv_text]),
                 media_type="text/csv",
-                headers={"Content-Disposition": "attachment; filename=all_reports.csv"}
+                headers={"Content-Disposition": "attachment; filename=all_reports.csv"},
             )
         elif format == "pdf":
-            pdf_bytes = export_utils.export_to_pdf(reports_copy, filename="all_reports.pdf")
+            pdf_bytes = export_utils.export_to_pdf(
+                reports_copy, filename="all_reports.pdf"
+            )
             if not pdf_bytes:
-                raise HTTPException(status_code=503, detail="PDF export not available (reportlab not installed)")
+                raise HTTPException(
+                    status_code=503,
+                    detail="PDF export not available (reportlab not installed)",
+                )
             return StreamingResponse(
                 iter([pdf_bytes]),
                 media_type="application/pdf",
-                headers={"Content-Disposition": "attachment; filename=all_reports.pdf"}
+                headers={"Content-Disposition": "attachment; filename=all_reports.pdf"},
             )
         elif format == "excel":
-            excel_bytes = export_utils.export_to_excel(reports_copy, filename="all_reports.xlsx")
+            excel_bytes = export_utils.export_to_excel(
+                reports_copy, filename="all_reports.xlsx"
+            )
             if not excel_bytes:
-                raise HTTPException(status_code=503, detail="Excel export not available (openpyxl not installed)")
+                raise HTTPException(
+                    status_code=503,
+                    detail="Excel export not available (openpyxl not installed)",
+                )
             return StreamingResponse(
                 iter([excel_bytes]),
                 media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                headers={"Content-Disposition": "attachment; filename=all_reports.xlsx"}
+                headers={
+                    "Content-Disposition": "attachment; filename=all_reports.xlsx"
+                },
             )
         else:
             raise HTTPException(status_code=400, detail="Invalid format")
@@ -1273,23 +1407,24 @@ def get_report(report_id: str, x_api_key: Optional[str] = Header(default=None)):
 def generate_chat_response(
     user_message: str,
     detection_result: Optional[DetectionResult],
-    session_history: List[Dict[str, Any]]
+    session_history: List[Dict[str, Any]],
 ) -> str:
     """
     Generate a chat response using real LLM integration.
     Returns structured answer or error message.
     """
-    
+
     # Try real LLM first
     try:
         from . import llm
+
         det_ctx = detection_result.dict() if detection_result is not None else None
         llm_resp = llm.generate_llm_response(
-            user_message=user_message, 
-            detection_context=det_ctx, 
-            session_history=session_history
+            user_message=user_message,
+            detection_context=det_ctx,
+            session_history=session_history,
         )
-        
+
         # Handle structured response
         if isinstance(llm_resp, dict):
             if "answer" in llm_resp:
@@ -1310,23 +1445,38 @@ def generate_chat_response(
 
     # Fallback rule-based response
     fallback_prefix = "[Fallback Mode - Configure OPENAI_API_KEY for AI responses]\n\n"
-    
+
     if "detection" in user_message.lower():
         count = len(detection_result.objects) if detection_result else 0
-        return fallback_prefix + f"Latest detection shows: {count} objects detected. Please refer to the detection panel for details."
+        return (
+            fallback_prefix
+            + f"Latest detection shows: {count} objects detected. Please refer to the detection panel for details."
+        )
     if "safety" in user_message.lower():
-        return fallback_prefix + "Safety is our top priority. Always use proper protective equipment and follow safety protocols."
+        return (
+            fallback_prefix
+            + "Safety is our top priority. Always use proper protective equipment and follow safety protocols."
+        )
     if "incident" in user_message.lower():
-        return fallback_prefix + "To report an incident, click the 'Create Incident' button and fill in the required details."
+        return (
+            fallback_prefix
+            + "To report an incident, click the 'Create Incident' button and fill in the required details."
+        )
     if "help" in user_message.lower() or "guide" in user_message.lower():
-        return fallback_prefix + "HAZM TUWAIQ Safety Platform features:\n" + \
-               "• Real-time hazard detection\n" + \
-               "• Incident reporting and tracking\n" + \
-               "• Risk assessment and compliance\n" + \
-               "• Advanced analytics and reporting\n\n" + \
-               "Ask me about any safety topic!"
-    
-    return fallback_prefix + f"Thank you for your question: '{user_message}'. The system is ready to assist with hazard detection, incident reporting, and risk assessment. Configure AI integration for intelligent responses."
+        return (
+            fallback_prefix
+            + "HAZM TUWAIQ Safety Platform features:\n"
+            + "• Real-time hazard detection\n"
+            + "• Incident reporting and tracking\n"
+            + "• Risk assessment and compliance\n"
+            + "• Advanced analytics and reporting\n\n"
+            + "Ask me about any safety topic!"
+        )
+
+    return (
+        fallback_prefix
+        + f"Thank you for your question: '{user_message}'. The system is ready to assist with hazard detection, incident reporting, and risk assessment. Configure AI integration for intelligent responses."
+    )
 
 
 @app.get("/chat/{session_id}", response_model=List[ChatResponse])
@@ -1336,11 +1486,11 @@ def get_chat_history(
 ):
     """Get chat history for a specific session"""
     require_api_key(x_api_key)
-    
+
     if session_id not in DB["chat_sessions"]:
         logger.warning(f"Chat session not found: {session_id}")
         return []
-    
+
     return [ChatResponse(**msg) for msg in DB["chat_sessions"][session_id]]
 
 
@@ -1351,13 +1501,13 @@ def clear_chat_session(
 ):
     """Clear all messages in a chat session"""
     require_api_key(x_api_key)
-    
+
     if session_id in DB["chat_sessions"]:
         del DB["chat_sessions"][session_id]
         logger.info(f"Chat session cleared: {session_id}")
-    
+
     return ApiMessage(message=f"Chat session {session_id} cleared")
-    
+
     return ApiMessage(message=f"Chat session {session_id} cleared")
 
 
@@ -1366,17 +1516,13 @@ def clear_chat_session(
 # =========================
 if __name__ == "__main__":
     import uvicorn
-    
+
     port = int(os.getenv("PORT", 8000))
     host = os.getenv("HOST", "0.0.0.0")
-    
+
     logger.info(f"Starting {APP_NAME} v{APP_VERSION}")
     logger.info(f"Server will run on {host}:{port}")
-    
+
     uvicorn.run(
-        "app:app",
-        host=host,
-        port=port,
-        reload=True,
-        log_level=LOG_LEVEL.lower()
+        "app:app", host=host, port=port, reload=True, log_level=LOG_LEVEL.lower()
     )

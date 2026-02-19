@@ -2,23 +2,28 @@
 Advanced Features API - واجهة برمجية للميزات المتقدمة
 جميع الميزات النوعية والحصرية لحزم طويق
 """
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from typing import Dict, List, Any, Optional
+
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from fastapi import APIRouter, HTTPException
+from innovation.advanced_features import (
+    AutonomousSafetyActions,
+    CrossProjectIntelligence,
+    ExecutiveAISafetyAdvisor,
+    SmartPermitToWorkAI,
+)
+from innovation.ai_safety_brain import AISafetyBrain
+from innovation.ai_storytelling_compliance import (
+    AIIncidentStorytelling,
+    ComplianceAutoAuditor,
+)
 
 # استيراد جميع المحركات المتقدمة
 from innovation.digital_safety_twin import DigitalSafetyTwin
-from innovation.ai_safety_brain import AISafetyBrain
-from innovation.worker_risk_profiling import WorkerRiskProfiling
 from innovation.safety_gamification import SafetyGamificationEngine
-from innovation.ai_storytelling_compliance import AIIncidentStorytelling, ComplianceAutoAuditor
-from innovation.advanced_features import (
-    SmartPermitToWorkAI,
-    ExecutiveAISafetyAdvisor,
-    AutonomousSafetyActions,
-    CrossProjectIntelligence
-)
+from innovation.worker_risk_profiling import WorkerRiskProfiling
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/v1/advanced", tags=["Advanced Features"])
 
@@ -36,6 +41,7 @@ cross_project = CrossProjectIntelligence()
 
 
 # ========== Digital Safety Twin ==========
+
 
 class WorksiteConfig(BaseModel):
     worksite_id: str
@@ -73,8 +79,7 @@ async def simulate_scenario(scenario: ScenarioConfig):
 
 @router.post("/digital-twin/test-procedure-change")
 async def test_procedure_change(
-    current_procedures: Dict[str, Any],
-    new_procedures: Dict[str, Any]
+    current_procedures: Dict[str, Any], new_procedures: Dict[str, Any]
 ):
     """اختبار تأثير تغيير الإجراءات"""
     try:
@@ -105,6 +110,7 @@ async def predict_hotspots(days_ahead: int = 7):
 
 
 # ========== AI Safety Brain ==========
+
 
 class IncidentData(BaseModel):
     type: str
@@ -184,6 +190,7 @@ async def get_cross_project_insights():
 
 # ========== Worker Risk Profiling ==========
 
+
 @router.post("/risk-profiling/create-profile")
 async def create_worker_profile(worker_data: Dict[str, Any]):
     """إنشاء ملف تعريف عامل"""
@@ -256,6 +263,7 @@ async def get_risk_report(worker_id: Optional[str] = None):
 
 # ========== Safety Gamification ==========
 
+
 @router.post("/gamification/register-player")
 async def register_player(player_data: Dict[str, Any]):
     """تسجيل لاعب جديد"""
@@ -298,6 +306,7 @@ async def award_badge(player_id: str, badge_name: str):
 
 # ========== AI Storytelling ==========
 
+
 @router.post("/storytelling/create-story")
 async def create_incident_story(incident_data: Dict[str, Any]):
     """إنشاء قصة من حادث"""
@@ -310,8 +319,11 @@ async def create_incident_story(incident_data: Dict[str, Any]):
 
 # ========== Compliance Auditor ==========
 
+
 @router.post("/compliance/audit")
-async def conduct_compliance_audit(site_data: Dict[str, Any], standard: str = "ISO45001"):
+async def conduct_compliance_audit(
+    site_data: Dict[str, Any], standard: str = "ISO45001"
+):
     """إجراء تدقيق امتثال"""
     try:
         result = compliance_auditor.conduct_audit(site_data, standard)
@@ -342,6 +354,7 @@ async def get_compliance_report(audit_id: Optional[str] = None):
 
 # ========== Smart Permit-to-Work ==========
 
+
 @router.post("/permit/review")
 async def review_permit(permit_data: Dict[str, Any]):
     """مراجعة تصريح عمل"""
@@ -353,6 +366,7 @@ async def review_permit(permit_data: Dict[str, Any]):
 
 
 # ========== Executive Advisor ==========
+
 
 @router.post("/executive/ask")
 async def ask_executive_advisor(question: str, context_data: Dict[str, Any] = {}):
@@ -366,6 +380,7 @@ async def ask_executive_advisor(question: str, context_data: Dict[str, Any] = {}
 
 # ========== Autonomous Safety Actions ==========
 
+
 @router.post("/autonomous/detect-and-act")
 async def autonomous_detect_and_act(risk_data: Dict[str, Any]):
     """اكتشاف خطر واتخاذ إجراء تلقائي"""
@@ -377,6 +392,7 @@ async def autonomous_detect_and_act(risk_data: Dict[str, Any]):
 
 
 # ========== Cross-Project Intelligence ==========
+
 
 @router.post("/cross-project/compare")
 async def compare_projects(project_ids: List[str]):
@@ -400,6 +416,7 @@ async def get_sector_insights(sector: str):
 
 # ========== Dashboard Overview ==========
 
+
 @router.get("/overview")
 async def get_advanced_features_overview():
     """نظرة عامة على جميع الميزات المتقدمة"""
@@ -413,8 +430,8 @@ async def get_advanced_features_overview():
                     "/digital-twin/create-worksite",
                     "/digital-twin/simulate-scenario",
                     "/digital-twin/heatmap",
-                    "/digital-twin/predict-hotspots"
-                ]
+                    "/digital-twin/predict-hotspots",
+                ],
             },
             "ai_safety_brain": {
                 "name": "العقل المركزي للسلامة",
@@ -423,8 +440,8 @@ async def get_advanced_features_overview():
                     "/ai-brain/learn-from-incident",
                     "/ai-brain/learn-from-near-miss",
                     "/ai-brain/organizational-memory",
-                    "/ai-brain/apply-to-new-project"
-                ]
+                    "/ai-brain/apply-to-new-project",
+                ],
             },
             "worker_risk_profiling": {
                 "name": "تحليل المخاطر للعمال",
@@ -433,8 +450,8 @@ async def get_advanced_features_overview():
                     "/risk-profiling/analyze-behavior",
                     "/risk-profiling/classify-by-task",
                     "/risk-profiling/assess-fatigue",
-                    "/risk-profiling/suggest-redistribution"
-                ]
+                    "/risk-profiling/suggest-redistribution",
+                ],
             },
             "safety_gamification": {
                 "name": "محرك التحفيز",
@@ -442,13 +459,13 @@ async def get_advanced_features_overview():
                 "endpoints": [
                     "/gamification/register-player",
                     "/gamification/record-safe-behavior",
-                    "/gamification/leaderboard"
-                ]
+                    "/gamification/leaderboard",
+                ],
             },
             "ai_storytelling": {
                 "name": "رواية الحوادث بالذكاء الاصطناعي",
                 "description": "تحويل الحوادث إلى قصص تحليلية",
-                "endpoints": ["/storytelling/create-story"]
+                "endpoints": ["/storytelling/create-story"],
             },
             "compliance_auditor": {
                 "name": "المدقق التلقائي",
@@ -456,36 +473,36 @@ async def get_advanced_features_overview():
                 "endpoints": [
                     "/compliance/audit",
                     "/compliance/detect-drift",
-                    "/compliance/report"
-                ]
+                    "/compliance/report",
+                ],
             },
             "smart_permit": {
                 "name": "تصاريح العمل الذكية",
                 "description": "مراجعة AI لتصاريح العمل",
-                "endpoints": ["/permit/review"]
+                "endpoints": ["/permit/review"],
             },
             "executive_advisor": {
                 "name": "المستشار التنفيذي",
                 "description": "مساعد AI للإدارة العليا",
-                "endpoints": ["/executive/ask"]
+                "endpoints": ["/executive/ask"],
             },
             "autonomous_actions": {
                 "name": "الإجراءات التلقائية",
                 "description": "إيقاف وتنبيه تلقائي",
-                "endpoints": ["/autonomous/detect-and-act"]
+                "endpoints": ["/autonomous/detect-and-act"],
             },
             "cross_project": {
                 "name": "الذكاء عبر المشاريع",
                 "description": "تحليل ومقارنة المشاريع",
                 "endpoints": [
                     "/cross-project/compare",
-                    "/cross-project/sector-insights"
-                ]
-            }
+                    "/cross-project/sector-insights",
+                ],
+            },
         },
         "total_features": 10,
         "total_endpoints": 40,
-        "message": "🏆 حزم طويق - أول منصة تفكّر استباقيًا بالسلامة"
+        "message": "🏆 حزم طويق - أول منصة تفكّر استباقيًا بالسلامة",
     }
 
 
@@ -504,7 +521,7 @@ async def advanced_features_health():
             "permit_ai": "operational",
             "executive_advisor": "operational",
             "autonomous_actions": "operational",
-            "cross_project": "operational"
+            "cross_project": "operational",
         },
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }

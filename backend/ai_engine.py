@@ -3,12 +3,13 @@
 Loads YOLO model once (via init_model) and exposes detect_frame.
 If ultralytics is not installed, returns mock detections.
 """
+
 from __future__ import annotations
 
 import os
 import time
-from typing import Any, Dict, List, Optional
 from threading import Lock
+from typing import Any, Dict, List, Optional
 
 _MODEL = None
 _MODEL_LOCK = Lock()
@@ -67,12 +68,14 @@ def _boxes_from_result(r) -> List[Dict[str, Any]]:
                 label = names.get(cls)
             if label is None:
                 label = str(cls)
-            objs.append({
-                "class": label,
-                "confidence": conf,
-                "bbox": [x1, y1, x2, y2],
-                "box": [x1, y1, x2, y2],
-            })
+            objs.append(
+                {
+                    "class": label,
+                    "confidence": conf,
+                    "bbox": [x1, y1, x2, y2],
+                    "box": [x1, y1, x2, y2],
+                }
+            )
         except Exception:
             continue
     return objs
@@ -87,7 +90,14 @@ def detect_frame(frame_bytes: bytes, conf_thresh: float = 0.25) -> Dict[str, Any
         return {
             "model": "mock",
             "timestamp": ts,
-            "objects": [{"class": "person", "confidence": 0.6, "bbox": [10, 10, 100, 200], "box": [10, 10, 100, 200]}],
+            "objects": [
+                {
+                    "class": "person",
+                    "confidence": 0.6,
+                    "bbox": [10, 10, 100, 200],
+                    "box": [10, 10, 100, 200],
+                }
+            ],
             "raw": None,
         }
 
@@ -104,4 +114,9 @@ def detect_frame(frame_bytes: bytes, conf_thresh: float = 0.25) -> Dict[str, Any
             "raw": None,
         }
     except Exception as e:
-        return {"model": "yolov8_error", "timestamp": ts, "objects": [], "raw": {"error": str(e)}}
+        return {
+            "model": "yolov8_error",
+            "timestamp": ts,
+            "objects": [],
+            "raw": {"error": str(e)},
+        }

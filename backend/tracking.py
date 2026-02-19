@@ -2,11 +2,12 @@
 are not available. Assigns persistent numeric `track_id` per camera for short
 term identity across consecutive frames.
 """
+
 from __future__ import annotations
 
-from typing import List, Dict, Any
-import threading
 import math
+import threading
+from typing import Any, Dict, List
 
 # Per-camera tracker state
 _TRACKERS: Dict[str, Dict[str, Any]] = {}
@@ -30,7 +31,9 @@ def _iou(boxA, boxB):
     return interArea / denom
 
 
-def update(camera_id: str, detections: List[Dict[str, Any]], iou_threshold: float = 0.3) -> List[Dict[str, Any]]:
+def update(
+    camera_id: str, detections: List[Dict[str, Any]], iou_threshold: float = 0.3
+) -> List[Dict[str, Any]]:
     """Assign `track_id` to each detection in-place and return list.
 
     detections: each item has `bbox` field

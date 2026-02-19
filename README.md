@@ -211,3 +211,119 @@ Made with 🧠 and ❤️ in Saudi Arabia 🇸🇦
 **Version 4.0.0 — The Phenomenon Begins Now**
 
 </div>
+
+---
+
+## 🏭 HSE Product-Grade Demo (API v1)
+
+تمت إضافة طبقة API جديدة جاهزة للديمو تحت:
+
+- Base URL: `http://localhost:8000/api/v1`
+- Swagger: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/api/redoc`
+
+### تشغيل سريع على Windows
+
+```bat
+scripts_windows_setup.bat
+scripts_windows_run.bat
+```
+
+### حسابات ديمو (يتم توليدها تلقائياً عند startup)
+
+- `admin / Admin@123`
+- `hse / HSE@123`
+- `supervisor / Sup@123`
+- `viewer / View@123`
+
+### أهم المسارات الجديدة
+
+- `GET /api/v1/core/health`
+- `GET /api/v1/core/status`
+- `GET /api/v1/core/metrics`
+- `POST /api/v1/auth/login`
+- `GET /api/v1/governance/roles`
+- `POST /api/v1/incidents`
+- `GET /api/v1/incidents?page=1&page_size=20&status=submitted`
+- `POST /api/v1/observations`
+- `GET /api/v1/observations/kpis`
+- `POST /api/v1/risk/jsa`
+- `POST /api/v1/ptw`
+- `GET /api/v1/ptw/dashboard`
+- `POST /api/v1/environment/measurements`
+- `GET /api/v1/environment/weekly-report`
+- `POST /api/v1/training`
+- `GET /api/v1/training/compliance`
+- `POST /api/v1/behavior-analytics/score`
+- `GET /api/v1/behavior-analytics/top-risks`
+- `POST /api/v1/alerts/evaluate`
+- `GET /api/v1/reports/dashboard`
+- `GET /api/v1/reports/export/csv`
+- `GET /api/v1/reports/export/pdf`
+- `GET /api/v1/reports/weekly`
+
+### أمثلة curl
+
+```bash
+curl -X POST http://localhost:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"Admin@123"}'
+
+curl -X POST http://localhost:8000/api/v1/incidents \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Heat stress","description":"Area A","severity":4,"likelihood":4,"status":"submitted"}'
+
+curl http://localhost:8000/api/v1/reports/dashboard
+```
+
+## ✅ Production Demo Upgrade Notes
+
+### API Docs
+- Swagger: `http://localhost:8000/api/docs`
+- ReDoc: `http://localhost:8000/api/redoc`
+
+### Demo Accounts
+- `admin / Admin@123`
+- `hse / HSE@123`
+- `supervisor / Sup@123`
+- `viewer / View@123`
+
+### New Core Endpoints
+- `GET /api/v1/dashboard/overview`
+- `GET /api/v1/dashboard/safety-brief/daily`
+- `GET /api/v1/exclusive/smart-recommendations`
+- `GET /api/v1/exclusive/safety-score`
+- `GET /api/v1/exclusive/reports/json`
+- `GET /api/v1/predictive/hotspots`
+- `POST /api/v1/vision/detect/image`
+
+### Windows (3-minute setup)
+1. `scripts_windows_setup.bat`
+2. `scripts_windows_run.bat`
+3. open `http://localhost:8000/api/docs`
+
+## 🚀 Feature-Complete Local Run
+
+### Windows
+1. `scripts_windows_setup.bat`
+2. `scripts_windows_run_backend.bat`
+3. `scripts_windows_run_frontend.bat`
+4. Frontend: `http://localhost:4173/index.html`
+5. API Docs: `http://localhost:8000/api/docs`
+
+### API v1 Main Routes
+- Dashboard: `GET /api/v1/dashboard/overview`
+- Cameras: `GET/POST /api/v1/cameras`, `GET/PATCH /api/v1/cameras/{id}`, `GET /api/v1/cameras/{id}/health`
+- Vision: `POST /api/v1/vision/detect/image`, `POST /api/v1/vision/zones/validate`, `GET /api/v1/vision/events`
+- Assistant: `POST /api/v1/assistant/chat`, `GET /api/v1/assistant/daily-brief`, `GET /api/v1/assistant/recommendations`
+- Incidents: `GET/POST /api/v1/incidents`, `GET/PATCH/DELETE /api/v1/incidents/{id}`, `POST /api/v1/incidents/{id}/actions`, `GET /api/v1/incidents/analytics/summary`
+- Risks: `GET/POST /api/v1/risks`, `GET /api/v1/risks/matrix`, `GET /api/v1/risks/top`
+- Inspections: `GET/POST /api/v1/inspections`, `GET/POST /api/v1/inspection-templates`, `POST /api/v1/inspections/{id}/submit`, `GET /api/v1/inspections/overdue`
+- Reports: `GET /api/v1/reports/daily|weekly|monthly`, `GET /api/v1/reports/export?type=weekly`
+- Environment: `GET/POST /api/v1/environment/readings`, `GET /api/v1/environment/alerts`, `GET /api/v1/environment/summary`
+
+### Additional Demo Account
+- `auditor / Audit@123`
+
+### One-click Windows
+- `scripts_windows_run_all.bat`

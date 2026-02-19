@@ -9,19 +9,29 @@ Detects simple events from detections stream:
 This module uses `cctv.store_alert` to persist events. It implements
 lightweight polygon containment fallback (no shapely required).
 """
+
 from __future__ import annotations
 
-from typing import List, Dict, Any, Optional
-import time
 import math
+import time
+from typing import Any, Dict, List, Optional
 
 try:
     from shapely.geometry import Point, Polygon
+
     SHAPELY = True
 except Exception:
     SHAPELY = False
 
-import cctv
+import importlib.util
+from pathlib import Path
+
+# Ensure we import the CCTV manager module from backend/cctv.py (not backend/cctv/ package)
+_cctv_path = Path(__file__).resolve().parent / "cctv.py"
+_spec = importlib.util.spec_from_file_location("backend_cctv_runtime", str(_cctv_path))
+cctv = importlib.util.module_from_spec(_spec)
+assert _spec and _spec.loader
+_spec.loader.exec_module(cctv)
 
 # In-memory tracking for dwell-time: {camera_id: {track_id: {zone_id: enter_ts}}}
 _DWELL: Dict[str, Dict[int, Dict[str, float]]] = {}
@@ -37,7 +47,9 @@ def _point_in_poly(x: float, y: float, poly: List[List[float]]) -> bool:
     for i in range(len(poly)):
         xi, yi = poly[i]
         xj, yj = poly[j]
-        intersect = ((yi > y) != (yj > y)) and (x < (xj - xi) * (y - yi) / (yj - yi + 1e-9) + xi)
+        intersect = ((yi > y) != (yj > y)) and (
+            x < (xj - xi) * (y - yi) / (yj - yi + 1e-9) + xi
+        )
         if intersect:
             inside = not inside
         j = i
@@ -49,7 +61,9 @@ def _bbox_center(bbox: List[float]) -> (float, float):
     return ((x1 + x2) / 2.0, (y1 + y2) / 2.0)
 
 
-def process_detections(camera_id: str, detections: List[Dict[str, Any]], ts: Optional[str] = None) -> None:
+def process_detections(
+    camera_id: str, detections: List[Dict[str, Any]], ts: Optional[str] = None
+) -> None:
     """Process detections and emit alerts via `cctv.store_alert`.
 
     Detections expected as list of dicts with keys: class, confidence, bbox, track_id (optional)
@@ -77,13 +91,19 @@ def process_detections(camera_id: str, detections: List[Dict[str, Any]], ts: Opt
     crowd_threshold = 5
     default_dwell = 10
     if cam_z:
-        cam_rules = cam_z.get("rules", {}) if isinstance(cam_z.get("rules", {}), dict) else {}
-        proximity_threshold = float(cam_rules.get("proximity_threshold", proximity_threshold))
+        cam_rules = (
+            cam_z.get("rules", {}) if isinstance(cam_z.get("rules", {}), dict) else {}
+        )
+        proximity_threshold = float(
+            cam_rules.get("proximity_threshold", proximity_threshold)
+        )
         crowd_threshold = int(cam_rules.get("crowd_threshold", crowd_threshold))
         default_dwell = float(cam_rules.get("default_dwell_threshold", default_dwell))
 
     # Crowd density
-    persons = [d for d in detections if (d.get("class") or "").strip().lower() == "person"]
+    persons = [
+        d for d in detections if (d.get("class") or "").strip().lower() == "person"
+    ]
     if len(persons) >= crowd_threshold:
         payload = {"count": len(persons), "threshold": crowd_threshold}
         cctv.store_alert(camera_id, ts, "crowd_density", "medium", payload)
@@ -97,7 +117,11 @@ def process_detections(camera_id: str, detections: List[Dict[str, Any]], ts: Opt
             x2, y2 = _bbox_center(b2)
             dist = math.hypot(x2 - x1, y2 - y1)
             if dist < proximity_threshold:
-                payload = {"distance_px": dist, "a": persons[i].get("track_id"), "b": persons[j].get("track_id")}
+                payload = {
+                    "distance_px": dist,
+                    "a": persons[i].get("track_id"),
+                    "b": persons[j].get("track_id"),
+                }
                 cctv.store_alert(camera_id, ts, "proximity", "low", payload)
 
     # Zone entry & dwell
@@ -124,5 +148,9 @@ def process_detections(camera_id: str, detections: List[Dict[str, Any]], ts: Opt
                     enter_ts = track_dw[zid]
                     dwell_threshold = float(z.get("dwell_threshold", default_dwell))
                     if time.time() - enter_ts > dwell_threshold:
-                        payload = {"zone": zid, "track_id": track_id, "dwell_s": time.time() - enter_ts}
+                        payload = {
+                            "zone": zid,
+                            "track_id": track_id,
+                            "dwell_s": time.time() - enter_ts,
+                        }
                         cctv.store_alert(camera_id, ts, "dwell_time", "high", payload)

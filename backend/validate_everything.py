@@ -4,16 +4,15 @@
 Exits with non-zero on first failure and prints exact error.
 On success prints: System verified – ready for next phase
 """
-import os
-import sys
 import ast
-import re
-import traceback
 import importlib
+import os
+import re
+import sys
+import traceback
+from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin
-from urllib.request import urlopen, Request
-from urllib.error import URLError, HTTPError
-
+from urllib.request import Request, urlopen
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -71,7 +70,9 @@ def check_innovation_modules():
         try:
             mod = importlib.import_module(full)
         except Exception:
-            fail(f"Failed importing innovation module {full}:\n" + traceback.format_exc())
+            fail(
+                f"Failed importing innovation module {full}:\n" + traceback.format_exc()
+            )
         if attr:
             if not hasattr(mod, attr) or not callable(getattr(mod, attr)):
                 fail(f"Module {full} missing callable attribute: {attr}")
@@ -105,7 +106,13 @@ def check_backend_core():
 
 
 def check_frontend_files():
-    keys = ["app.js", "index.html", "camera-rules.html", "camera-test.html", "styles.css"]
+    keys = [
+        "app.js",
+        "index.html",
+        "camera-rules.html",
+        "camera-test.html",
+        "styles.css",
+    ]
     for k in keys:
         p = os.path.join(ROOT, "frontend", k)
         if not os.path.isfile(p):
@@ -126,9 +133,16 @@ def check_no_secrets():
     """
     leaks = []
     sk_regex = re.compile(r"\bsk-[A-Za-z0-9_\-]{16,}\b")
-    aws_key_regex = re.compile(r"(?i)aws_secret_access_key\s*[:=]\s*([A-Za-z0-9/+=]{8,})")
-    private_key_markers = ["-----BEGIN RSA PRIVATE KEY-----", "-----BEGIN PRIVATE KEY-----"]
-    generic_key_assign = re.compile(r"(?i)\b(?:OPENAI_API_KEY|ANTHROPIC_API_KEY|AWS_SECRET_ACCESS_KEY|AWS_ACCESS_KEY_ID|HAZM_API_KEY|API_KEY|SECRET_KEY)\b\s*[:=]\s*(\S+)")
+    aws_key_regex = re.compile(
+        r"(?i)aws_secret_access_key\s*[:=]\s*([A-Za-z0-9/+=]{8,})"
+    )
+    private_key_markers = [
+        "-----BEGIN RSA PRIVATE KEY-----",
+        "-----BEGIN PRIVATE KEY-----",
+    ]
+    generic_key_assign = re.compile(
+        r"(?i)\b(?:OPENAI_API_KEY|ANTHROPIC_API_KEY|AWS_SECRET_ACCESS_KEY|AWS_ACCESS_KEY_ID|HAZM_API_KEY|API_KEY|SECRET_KEY)\b\s*[:=]\s*(\S+)"
+    )
 
     for dirpath, dirnames, filenames in os.walk(ROOT):
         if ".git" in dirpath or "node_modules" in dirpath:
@@ -162,9 +176,13 @@ def check_no_secrets():
                         m2 = generic_key_assign.search(line)
                         if m2:
                             val = m2.group(1).strip().strip('"')
-                            if val and not re.match(r"(?i)^(your|example|none|-|\s*)", val):
+                            if val and not re.match(
+                                r"(?i)^(your|example|none|-|\s*)", val
+                            ):
                                 # value is non-empty and not a clear placeholder
-                                leaks.append(f"{fp}:{lineno}: key assignment with value")
+                                leaks.append(
+                                    f"{fp}:{lineno}: key assignment with value"
+                                )
                                 continue
             except Exception:
                 continue
@@ -183,7 +201,9 @@ def check_optional_endpoints():
         try:
             req = Request(url, headers={"User-Agent": "validate_everything/1.0"})
             with urlopen(req, timeout=5) as r:
-                code = getattr(r, "status", None) or getattr(r, "getcode", lambda: None)()
+                code = (
+                    getattr(r, "status", None) or getattr(r, "getcode", lambda: None)()
+                )
                 if code not in (200, 204):
                     fail(f"Endpoint {url} returned status {code}")
         except HTTPError as e:

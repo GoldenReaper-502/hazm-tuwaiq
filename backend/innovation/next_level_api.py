@@ -2,28 +2,38 @@
 Next-Level Innovations API - واجهة برمجية للميزات المتقدمة
 API شامل لجميع الابتكارات الثورية في النظام
 """
-from fastapi import APIRouter, HTTPException, Body
-from typing import Dict, List, Optional
-from pydantic import BaseModel
+
 from datetime import datetime
+from typing import Dict, List, Optional
+
+from fastapi import APIRouter, Body, HTTPException
+from pydantic import BaseModel
+
+from .advanced_detection import micro_behavior_detector, stress_detector
+from .explainable_ai import (
+    ConfidenceLevel,
+    DecisionType,
+    ExplainableDecision,
+    liability_shield,
+)
 
 # استيراد الوحدات المتقدمة
 from .organization_graph import (
-    organization_graph, Node, Role, Permission, 
-    AuthorityLevel, RiskLevel
+    AuthorityLevel,
+    Node,
+    Permission,
+    RiskLevel,
+    Role,
+    organization_graph,
 )
 from .owner_control import owner_control
-from .explainable_ai import (
-    ExplainableDecision, DecisionType, ConfidenceLevel,
-    liability_shield
-)
-from .advanced_detection import micro_behavior_detector, stress_detector
-from .shadow_simulation import shadow_simulator, budget_optimizer
+from .shadow_simulation import budget_optimizer, shadow_simulator
 
 router = APIRouter()
 
 
 # ===== نماذج البيانات =====
+
 
 class CreateRoleRequest(BaseModel):
     owner_id: str
@@ -80,11 +90,12 @@ class BudgetOptimizationRequest(BaseModel):
 
 # ===== Owner Control Center Endpoints =====
 
+
 @router.post("/owner/role/create")
 async def create_role(request: CreateRoleRequest):
     """
     إنشاء دور جديد (Owner فقط)
-    
+
     المثال:
     ```json
     {
@@ -105,10 +116,10 @@ async def create_role(request: CreateRoleRequest):
     ```
     """
     success, message = owner_control.create_role(request.owner_id, request.role_data)
-    
+
     if not success:
         raise HTTPException(status_code=403, detail=message)
-    
+
     return {"success": True, "message": message}
 
 
@@ -116,14 +127,12 @@ async def create_role(request: CreateRoleRequest):
 async def modify_role(request: ModifyRoleRequest):
     """تعديل دور موجود (Owner فقط)"""
     success, message = owner_control.modify_role(
-        request.owner_id, 
-        request.role_id, 
-        request.modifications
+        request.owner_id, request.role_id, request.modifications
     )
-    
+
     if not success:
         raise HTTPException(status_code=403, detail=message)
-    
+
     return {"success": True, "message": message}
 
 
@@ -131,10 +140,10 @@ async def modify_role(request: ModifyRoleRequest):
 async def delete_role(request: DeleteRoleRequest):
     """حذف دور (Owner فقط)"""
     success, message = owner_control.delete_role(request.owner_id, request.role_id)
-    
+
     if not success:
         raise HTTPException(status_code=403, detail=message)
-    
+
     return {"success": True, "message": message}
 
 
@@ -142,7 +151,7 @@ async def delete_role(request: DeleteRoleRequest):
 async def add_constitutional_rule(request: ConstitutionalRuleRequest):
     """
     إضافة قاعدة دستورية (Owner فقط)
-    
+
     المثال:
     ```json
     {
@@ -157,11 +166,13 @@ async def add_constitutional_rule(request: ConstitutionalRuleRequest):
     }
     ```
     """
-    success, message = owner_control.set_constitutional_rule(request.owner_id, request.rule)
-    
+    success, message = owner_control.set_constitutional_rule(
+        request.owner_id, request.rule
+    )
+
     if not success:
         raise HTTPException(status_code=403, detail=message)
-    
+
     return {"success": True, "message": message}
 
 
@@ -171,7 +182,7 @@ async def get_constitution(owner_id: str):
     # التحقق من صلاحية المالك
     if not owner_control._verify_owner(owner_id):
         raise HTTPException(status_code=403, detail="Unauthorized")
-    
+
     return organization_graph.constitution.to_dict()
 
 
@@ -179,7 +190,7 @@ async def get_constitution(owner_id: str):
 async def create_person(request: CreatePersonRequest):
     """
     إنشاء شخص في النظام
-    
+
     المثال:
     ```json
     {
@@ -198,11 +209,13 @@ async def create_person(request: CreatePersonRequest):
     }
     ```
     """
-    success, message = owner_control.create_person(request.owner_id, request.person_data)
-    
+    success, message = owner_control.create_person(
+        request.owner_id, request.person_data
+    )
+
     if not success:
         raise HTTPException(status_code=403, detail=message)
-    
+
     return {"success": True, "message": message}
 
 
@@ -210,14 +223,12 @@ async def create_person(request: CreatePersonRequest):
 async def assign_role_to_person(request: AssignRoleRequest):
     """تعيين دور لشخص"""
     success, message = owner_control.assign_role(
-        request.owner_id,
-        request.person_id,
-        request.role_id
+        request.owner_id, request.person_id, request.role_id
     )
-    
+
     if not success:
         raise HTTPException(status_code=403, detail=message)
-    
+
     return {"success": True, "message": message}
 
 
@@ -225,10 +236,10 @@ async def assign_role_to_person(request: AssignRoleRequest):
 async def get_system_overview(owner_id: str):
     """نظرة عامة على النظام (Owner فقط)"""
     overview = owner_control.get_system_overview(owner_id)
-    
+
     if not overview:
         raise HTTPException(status_code=403, detail="Unauthorized")
-    
+
     return overview
 
 
@@ -238,16 +249,17 @@ async def get_audit_log(owner_id: str, action_type: Optional[str] = None):
     filters = {}
     if action_type:
         filters["action_type"] = action_type
-    
+
     logs = owner_control.get_audit_log(owner_id, filters)
-    
+
     if not logs and not owner_control._verify_owner(owner_id):
         raise HTTPException(status_code=403, detail="Unauthorized")
-    
+
     return {"logs": logs, "total": len(logs)}
 
 
 # ===== Organization Graph Endpoints =====
+
 
 @router.get("/organization/graph/export")
 async def export_organization_graph():
@@ -259,7 +271,7 @@ async def export_organization_graph():
 async def find_responsible_persons(location: str, risk_level: str):
     """
     إيجاد المسؤولين عن موقع
-    
+
     المعاملات:
     - location: معرف الموقع
     - risk_level: مستوى الخطر (LOW, MEDIUM, HIGH, CRITICAL)
@@ -268,13 +280,13 @@ async def find_responsible_persons(location: str, risk_level: str):
         risk = RiskLevel[risk_level.upper()]
     except KeyError:
         raise HTTPException(status_code=400, detail=f"Invalid risk level: {risk_level}")
-    
+
     responsible = organization_graph.find_responsible_persons(location, risk)
-    
+
     return {
         "location": location,
         "risk_level": risk_level,
-        "responsible_persons": responsible
+        "responsible_persons": responsible,
     }
 
 
@@ -285,33 +297,31 @@ async def get_alert_chain(location: str, risk_level: str):
         risk = RiskLevel[risk_level.upper()]
     except KeyError:
         raise HTTPException(status_code=400, detail=f"Invalid risk level: {risk_level}")
-    
+
     chain = organization_graph.get_alert_chain(location, risk)
-    
+
     # الحصول على تفاصيل الأشخاص
     persons = []
     for person_id in chain:
         if person_id in organization_graph.nodes:
             person = organization_graph.nodes[person_id]
-            persons.append({
-                "id": person.id,
-                "name": person.name,
-                "role": person.metadata.get("role_id"),
-                "contact": person.metadata.get("contact", {})
-            })
-    
-    return {
-        "location": location,
-        "risk_level": risk_level,
-        "alert_chain": persons
-    }
+            persons.append(
+                {
+                    "id": person.id,
+                    "name": person.name,
+                    "role": person.metadata.get("role_id"),
+                    "contact": person.metadata.get("contact", {}),
+                }
+            )
+
+    return {"location": location, "risk_level": risk_level, "alert_chain": persons}
 
 
 @router.post("/organization/check-permission")
 async def check_permission(person_id: str, permission: str, context: Dict = Body(...)):
     """
     التحقق من صلاحية شخص
-    
+
     المثال:
     ```json
     {
@@ -329,14 +339,14 @@ async def check_permission(person_id: str, permission: str, context: Dict = Body
         perm = Permission[permission.upper()]
     except KeyError:
         raise HTTPException(status_code=400, detail=f"Invalid permission: {permission}")
-    
+
     has_permission = organization_graph.check_permission(person_id, perm, context)
-    
+
     return {
         "person_id": person_id,
         "permission": permission,
         "has_permission": has_permission,
-        "context": context
+        "context": context,
     }
 
 
@@ -347,17 +357,18 @@ async def validate_action(action: str, person_id: str, context: Dict = Body(...)
     يتحقق من الدستور والصلاحيات
     """
     valid, message = organization_graph.validate_action(action, person_id, context)
-    
+
     return {
         "action": action,
         "person_id": person_id,
         "valid": valid,
         "message": message,
-        "context": context
+        "context": context,
     }
 
 
 # ===== Explainable AI Endpoints =====
+
 
 @router.post("/ai/decision/create")
 async def create_explainable_decision(
@@ -365,11 +376,11 @@ async def create_explainable_decision(
     result: Dict,
     reasoning: List[str],
     evidence: List[Dict],
-    confidence: float
+    confidence: float,
 ):
     """
     إنشاء قرار AI قابل للتفسير
-    
+
     المثال:
     ```json
     {
@@ -391,29 +402,29 @@ async def create_explainable_decision(
     try:
         dec_type = DecisionType[decision_type.upper()]
     except KeyError:
-        raise HTTPException(status_code=400, detail=f"Invalid decision type: {decision_type}")
-    
+        raise HTTPException(
+            status_code=400, detail=f"Invalid decision type: {decision_type}"
+        )
+
     decision = ExplainableDecision(dec_type, result)
-    
+
     # إضافة الأسباب
     for reason in reasoning:
         decision.add_reasoning(reason)
-    
+
     # إضافة الأدلة
     for ev in evidence:
         decision.add_evidence(
-            ev.get("type", "unknown"),
-            ev.get("data"),
-            ev.get("weight", 1.0)
+            ev.get("type", "unknown"), ev.get("data"), ev.get("weight", 1.0)
         )
-    
+
     # تعيين مستوى الثقة
     decision.set_confidence(confidence)
-    
+
     return {
         "decision_id": decision.id,
         "explanation": decision.generate_explanation("ar"),
-        "summary": decision.generate_summary("ar")
+        "summary": decision.generate_summary("ar"),
     }
 
 
@@ -421,7 +432,7 @@ async def create_explainable_decision(
 async def log_incident_for_liability(incident_id: str, details: Dict = Body(...)):
     """تسجيل حادث في سجل المسؤولية"""
     liability_shield.log_incident(incident_id, details)
-    
+
     return {"success": True, "incident_id": incident_id}
 
 
@@ -429,7 +440,7 @@ async def log_incident_for_liability(incident_id: str, details: Dict = Body(...)
 async def log_observation(incident_id: str, observer: Dict, observation: str):
     """تسجيل من رأى الخطر"""
     liability_shield.log_observation(incident_id, observer, observation)
-    
+
     return {"success": True}
 
 
@@ -437,17 +448,18 @@ async def log_observation(incident_id: str, observer: Dict, observation: str):
 async def get_liability_report(incident_id: str, language: str = "ar"):
     """توليد تقرير مسؤولية قانوني"""
     report = liability_shield.generate_liability_report(incident_id, language)
-    
+
     return report
 
 
 # ===== Advanced Detection Endpoints =====
 
+
 @router.post("/detection/behavior/analyze")
 async def analyze_worker_behavior(request: BehaviorAnalysisRequest):
     """
     تحليل سلوك عامل من الفيديو
-    
+
     المثال:
     ```json
     {
@@ -468,11 +480,9 @@ async def analyze_worker_behavior(request: BehaviorAnalysisRequest):
     ```
     """
     result = micro_behavior_detector.analyze_behavior(
-        request.worker_id,
-        request.video_data,
-        request.context
+        request.worker_id, request.video_data, request.context
     )
-    
+
     return result
 
 
@@ -480,7 +490,7 @@ async def analyze_worker_behavior(request: BehaviorAnalysisRequest):
 async def get_worker_risk_profile(worker_id: str):
     """الحصول على ملف تعريف مخاطر العامل"""
     profile = micro_behavior_detector.get_worker_profile(worker_id)
-    
+
     return profile
 
 
@@ -488,7 +498,7 @@ async def get_worker_risk_profile(worker_id: str):
 async def analyze_stress_signals(request: StressAnalysisRequest):
     """
     تحليل مؤشرات التوتر والضغط
-    
+
     المثال:
     ```json
     {
@@ -502,21 +512,19 @@ async def analyze_stress_signals(request: StressAnalysisRequest):
     }
     ```
     """
-    result = stress_detector.analyze_stress_signals(
-        request.worker_id,
-        request.signals
-    )
-    
+    result = stress_detector.analyze_stress_signals(request.worker_id, request.signals)
+
     return result
 
 
 # ===== Shadow Simulation Endpoints =====
 
+
 @router.post("/simulation/shadow/run")
 async def run_shadow_simulation(request: ShadowSimulationRequest):
     """
     تشغيل محاكاة ظل لسيناريوهات "ماذا لو"
-    
+
     المثال:
     ```json
     {
@@ -538,10 +546,9 @@ async def run_shadow_simulation(request: ShadowSimulationRequest):
     ```
     """
     result = shadow_simulator.run_shadow_simulation(
-        request.actual_event,
-        request.alternative_scenarios
+        request.actual_event, request.alternative_scenarios
     )
-    
+
     return result
 
 
@@ -549,7 +556,7 @@ async def run_shadow_simulation(request: ShadowSimulationRequest):
 async def get_shadow_simulation_report(simulation_id: str, language: str = "ar"):
     """الحصول على تقرير محاكاة ظل"""
     report = shadow_simulator.generate_what_if_report(simulation_id, language)
-    
+
     return report
 
 
@@ -557,17 +564,18 @@ async def get_shadow_simulation_report(simulation_id: str, language: str = "ar")
 async def get_saved_value_summary(days: int = 30):
     """ملخص القيمة المحفوظة من المحاكاة"""
     summary = shadow_simulator.get_saved_value_summary(days)
-    
+
     return summary
 
 
 # ===== Budget Optimization Endpoints =====
 
+
 @router.post("/budget/optimize")
 async def optimize_safety_budget(request: BudgetOptimizationRequest):
     """
     تحسين توزيع ميزانية السلامة
-    
+
     المثال:
     ```json
     {
@@ -589,15 +597,13 @@ async def optimize_safety_budget(request: BudgetOptimizationRequest):
     }
     ```
     """
-    result = budget_optimizer.optimize_budget(
-        request.total_budget,
-        request.risk_areas
-    )
-    
+    result = budget_optimizer.optimize_budget(request.total_budget, request.risk_areas)
+
     return result
 
 
 # ===== Health Check =====
+
 
 @router.get("/innovations/health")
 async def innovations_health():
@@ -611,7 +617,7 @@ async def innovations_health():
             "explainable_ai": True,
             "advanced_detection": True,
             "shadow_simulation": True,
-            "budget_optimizer": True
+            "budget_optimizer": True,
         },
         "statistics": {
             "total_roles": len(organization_graph.roles),
@@ -619,6 +625,6 @@ async def innovations_health():
             "constitutional_rules": len(organization_graph.constitution.rules),
             "audit_log_entries": len(owner_control.audit_log),
             "liability_log_entries": len(liability_shield.liability_log),
-            "simulations_run": len(shadow_simulator.simulations)
-        }
+            "simulations_run": len(shadow_simulator.simulations),
+        },
     }
