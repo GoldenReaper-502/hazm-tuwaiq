@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request
-from backend.platform.responses import ok
+
 from backend.platform.db import get_conn
+from backend.platform.responses import ok
 
 router = APIRouter(prefix="/exclusive", tags=["exclusive"])
 
@@ -8,8 +9,12 @@ router = APIRouter(prefix="/exclusive", tags=["exclusive"])
 @router.get("/smart-recommendations")
 def smart_recommendations(request: Request):
     with get_conn() as conn:
-        high = conn.execute("SELECT COUNT(*) c FROM incidents WHERE risk_score >= 15").fetchone()["c"]
-        env = conn.execute("SELECT COUNT(*) c FROM environment_measurements WHERE metric='noise' AND value>85").fetchone()["c"]
+        high = conn.execute(
+            "SELECT COUNT(*) c FROM incidents WHERE risk_score >= 15"
+        ).fetchone()["c"]
+        env = conn.execute(
+            "SELECT COUNT(*) c FROM environment_measurements WHERE metric='noise' AND value>85"
+        ).fetchone()["c"]
     recs = []
     if high:
         recs.append("Run immediate supervisor coaching on high-risk tasks")
@@ -45,5 +50,13 @@ def safety_score(request: Request):
 @router.get("/reports/json")
 def structured_report(request: Request):
     with get_conn() as conn:
-        incidents = [dict(r) for r in conn.execute("SELECT id,title,risk_score,status FROM incidents ORDER BY id DESC LIMIT 20").fetchall()]
-    return ok({"report_type": "structured_json", "incidents": incidents}, request.state.request_id)
+        incidents = [
+            dict(r)
+            for r in conn.execute(
+                "SELECT id,title,risk_score,status FROM incidents ORDER BY id DESC LIMIT 20"
+            ).fetchall()
+        ]
+    return ok(
+        {"report_type": "structured_json", "incidents": incidents},
+        request.state.request_id,
+    )

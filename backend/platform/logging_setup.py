@@ -1,13 +1,15 @@
 import json
 import logging
+from datetime import datetime, timezone
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from datetime import datetime, timezone
 
 
 def setup_logging() -> None:
     Path("logs").mkdir(exist_ok=True)
-    handler = RotatingFileHandler("logs/platform.log", maxBytes=2_000_000, backupCount=5, encoding="utf-8")
+    handler = RotatingFileHandler(
+        "logs/platform.log", maxBytes=2_000_000, backupCount=5, encoding="utf-8"
+    )
 
     class JsonFormatter(logging.Formatter):
         def format(self, record: logging.LogRecord) -> str:

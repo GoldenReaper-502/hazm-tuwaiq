@@ -3,15 +3,17 @@ HAZM TUWAIQ - Report Models
 Data structures for comprehensive reporting system
 """
 
-from pydantic import BaseModel, Field
-from typing import List, Dict, Any, Optional
+import uuid
 from datetime import datetime
 from enum import Enum
-import uuid
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
 
 
 class ReportType(str, Enum):
     """Report types"""
+
     SAFETY_SUMMARY = "safety_summary"
     INCIDENT_ANALYSIS = "incident_analysis"
     COMPLIANCE_AUDIT = "compliance_audit"
@@ -27,6 +29,7 @@ class ReportType(str, Enum):
 
 class ReportFormat(str, Enum):
     """Output formats"""
+
     PDF = "pdf"
     EXCEL = "excel"
     JSON = "json"
@@ -36,6 +39,7 @@ class ReportFormat(str, Enum):
 
 class ReportStatus(str, Enum):
     """Report generation status"""
+
     PENDING = "pending"
     GENERATING = "generating"
     COMPLETED = "completed"
@@ -45,6 +49,7 @@ class ReportStatus(str, Enum):
 
 class ReportFrequency(str, Enum):
     """Scheduling frequency"""
+
     ONCE = "once"
     DAILY = "daily"
     WEEKLY = "weekly"
@@ -55,6 +60,7 @@ class ReportFrequency(str, Enum):
 
 class ReportSection(BaseModel):
     """Report section configuration"""
+
     section_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     title: str
     type: str  # chart, table, text, metrics, summary
@@ -67,6 +73,7 @@ class ReportSection(BaseModel):
 
 class ReportTemplate(BaseModel):
     """Report template definition"""
+
     template_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     report_type: ReportType
@@ -81,6 +88,7 @@ class ReportTemplate(BaseModel):
 
 class ReportRequest(BaseModel):
     """Report generation request"""
+
     report_type: ReportType
     format: ReportFormat = ReportFormat.PDF
     title: str
@@ -97,6 +105,7 @@ class ReportRequest(BaseModel):
 
 class ReportMetrics(BaseModel):
     """Key metrics for reports"""
+
     total_incidents: int = 0
     total_near_misses: int = 0
     total_violations: int = 0
@@ -112,10 +121,11 @@ class ReportMetrics(BaseModel):
     high_risk_areas: List[str] = []
     top_violations: List[Dict[str, Any]] = []
     trend_direction: str = "stable"  # improving, stable, degrading
-    
-    
+
+
 class ReportChart(BaseModel):
     """Chart data for visualization"""
+
     chart_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     chart_type: str  # line, bar, pie, scatter, heatmap
     title: str
@@ -126,6 +136,7 @@ class ReportChart(BaseModel):
 
 class ReportTable(BaseModel):
     """Table data for reports"""
+
     table_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     title: str
     headers: List[str]
@@ -136,6 +147,7 @@ class ReportTable(BaseModel):
 
 class ReportData(BaseModel):
     """Complete report data"""
+
     report_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     report_type: ReportType
     format: ReportFormat
@@ -147,31 +159,32 @@ class ReportData(BaseModel):
     period_end: datetime
     generated_at: datetime = Field(default_factory=datetime.now)
     generated_by: str
-    
+
     # Executive Summary
     executive_summary: str = ""
     key_findings: List[str] = []
     recommendations: List[str] = []
-    
+
     # Metrics
     metrics: ReportMetrics = Field(default_factory=ReportMetrics)
-    
+
     # Visualizations
     charts: List[ReportChart] = []
     tables: List[ReportTable] = []
-    
+
     # Additional data
     incidents: List[Dict[str, Any]] = []
     violations: List[Dict[str, Any]] = []
     compliance_data: Dict[str, Any] = {}
     predictions: Optional[Dict[str, Any]] = None
-    
+
     # Metadata
     metadata: Optional[Dict[str, Any]] = None
-    
+
 
 class GeneratedReport(BaseModel):
     """Generated report record"""
+
     report_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     report_type: ReportType
     format: ReportFormat
@@ -190,6 +203,7 @@ class GeneratedReport(BaseModel):
 
 class ScheduledReport(BaseModel):
     """Scheduled report configuration"""
+
     schedule_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     report_type: ReportType
@@ -212,79 +226,82 @@ class ScheduledReport(BaseModel):
 
 class ComplianceReport(BaseModel):
     """Regulatory compliance report"""
+
     report_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     organization_id: str
     regulatory_body: str  # OSHA, ISO, etc.
     standard: str  # OSHA 1910, ISO 45001, etc.
     period_start: datetime
     period_end: datetime
-    
+
     # Compliance metrics
     overall_compliance: float  # 0-100
     compliant_items: int
     non_compliant_items: int
     pending_items: int
-    
+
     # Findings
     violations: List[Dict[str, Any]]
     corrective_actions: List[Dict[str, Any]]
     recommendations: List[str]
-    
+
     # Certifications
     certifications: List[Dict[str, Any]] = []
     audits: List[Dict[str, Any]] = []
-    
+
     generated_at: datetime = Field(default_factory=datetime.now)
     generated_by: str
     approved_by: Optional[str] = None
     approval_date: Optional[datetime] = None
-    
+
     metadata: Optional[Dict[str, Any]] = None
 
 
 class BoardReport(BaseModel):
     """Executive board report"""
+
     report_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     organization_id: str
     period_start: datetime
     period_end: datetime
-    
+
     # Executive Summary
     executive_summary: str
     strategic_highlights: List[str]
-    
+
     # Key Metrics
     safety_score: float
     incident_reduction: float  # percentage
     compliance_rate: float
     roi_safety_investment: float
-    
+
     # Financial Impact
     incident_costs: float
     savings_from_prevention: float
     insurance_impact: float
-    
+
     # Strategic Initiatives
     completed_initiatives: List[Dict[str, Any]]
     ongoing_initiatives: List[Dict[str, Any]]
     planned_initiatives: List[Dict[str, Any]]
-    
+
     # Risk Assessment
     top_risks: List[Dict[str, Any]]
     mitigation_strategies: List[str]
-    
+
     # Recommendations
     board_recommendations: List[str]
     resource_requests: List[Dict[str, Any]]
-    
+
     generated_at: datetime = Field(default_factory=datetime.now)
     generated_by: str
-    
+
     metadata: Optional[Dict[str, Any]] = None
 
 
 class ReportAnalytics(BaseModel):
     """Report generation analytics"""
+
     total_reports: int = 0
     reports_by_type: Dict[str, int] = {}
     reports_by_format: Dict[str, int] = {}

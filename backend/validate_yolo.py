@@ -4,13 +4,13 @@
 Usage: python validate_yolo.py
 It will call `ai_engine.init_model()` and run detect on a tiny test image.
 """
-from pathlib import Path
-import sys
 import base64
-import requests
 import os
+import sys
+from pathlib import Path
 
-from ai_engine import init_model, detect_frame
+import requests
+from ai_engine import detect_frame, init_model
 
 
 def download_sample(dest: Path) -> Path:
@@ -46,10 +46,12 @@ def main():
     print("Result model:", res.get("model"))
     print("Detected objects:")
     for o in res.get("objects", []):
-        print(f" - {o.get('class') or o.get('label')} conf={o.get('confidence')} bbox={o.get('bbox') or o.get('box')}")
+        print(
+            f" - {o.get('class') or o.get('label')} conf={o.get('confidence')} bbox={o.get('bbox') or o.get('box')}"
+        )
 
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

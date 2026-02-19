@@ -3,26 +3,28 @@
 Validation script for new Report endpoints.
 Tests auto-report generation, listing, and export functions.
 """
-import requests
 import base64
 import json
 from pathlib import Path
 
+import requests
+
 BASE_URL = "http://127.0.0.1:8000"
+
 
 def test_reports():
     """Test report endpoints."""
     print("\n=== Testing Reports Endpoints ===\n")
-    
+
     # 1. Create a test detection (with objects to trigger auto-report)
     print("1. Creating test detection...")
-    sample_png = b'\x89PNG\r\n\x1a\n' + b'\x00' * 100  # Minimal PNG
+    sample_png = b"\x89PNG\r\n\x1a\n" + b"\x00" * 100  # Minimal PNG
     frame_b64 = base64.b64encode(sample_png).decode()
-    
+
     det_resp = requests.post(
         f"{BASE_URL}/detect",
         json={"frame_data": frame_b64},
-        headers={"Content-Type": "application/json"}
+        headers={"Content-Type": "application/json"},
     )
     if det_resp.status_code == 200:
         det_id = det_resp.json()["id"]
@@ -30,7 +32,7 @@ def test_reports():
     else:
         print(f"   ✗ Detection failed: {det_resp.status_code} {det_resp.text}")
         return False
-    
+
     # 2. List auto-reports
     print("\n2. Listing auto-generated reports...")
     reports_resp = requests.get(f"{BASE_URL}/reports/auto")
@@ -46,7 +48,7 @@ def test_reports():
     else:
         print(f"   ✗ List reports failed: {reports_resp.status_code}")
         return False
-    
+
     # 3. Get single report (if any exist)
     if reports:
         print("\n3. Getting single report...")
@@ -56,7 +58,7 @@ def test_reports():
             print(f"   ✓ Retrieved report: {report_id}")
         else:
             print(f"   ✗ Get report failed: {single_resp.status_code}")
-    
+
     # 4. Export to CSV
     print("\n4. Testing CSV export...")
     csv_resp = requests.get(f"{BASE_URL}/reports/export?format=csv")
@@ -65,7 +67,7 @@ def test_reports():
         print(f"   ✓ CSV export successful ({csv_len} bytes)")
     else:
         print(f"   ✗ CSV export failed: {csv_resp.status_code}")
-    
+
     # 5. Export to JSON
     print("\n5. Testing JSON export...")
     json_resp = requests.get(f"{BASE_URL}/reports/export?format=json")
@@ -74,7 +76,7 @@ def test_reports():
         print(f"   ✓ JSON export successful ({json_len} bytes)")
     else:
         print(f"   ✗ JSON export failed: {json_resp.status_code}")
-    
+
     # 6. Test PDF export (may fail if reportlab not installed)
     print("\n6. Testing PDF export...")
     pdf_resp = requests.get(f"{BASE_URL}/reports/export?format=pdf")
@@ -85,7 +87,7 @@ def test_reports():
         print(f"   ⚠ PDF export not available (reportlab not installed)")
     else:
         print(f"   ✗ PDF export failed: {pdf_resp.status_code}")
-    
+
     # 7. Test Excel export (may fail if openpyxl not installed)
     print("\n7. Testing Excel export...")
     excel_resp = requests.get(f"{BASE_URL}/reports/export?format=excel")
@@ -96,9 +98,10 @@ def test_reports():
         print(f"   ⚠ Excel export not available (openpyxl not installed)")
     else:
         print(f"   ✗ Excel export failed: {excel_resp.status_code}")
-    
+
     print("\n=== Reports Tests Complete ===\n")
     return True
+
 
 if __name__ == "__main__":
     try:

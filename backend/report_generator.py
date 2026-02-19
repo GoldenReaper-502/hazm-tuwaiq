@@ -2,9 +2,9 @@
 
 Generates summaries, risk scores, and recommended actions based on detected objects.
 """
-from typing import Any, Dict, List, Optional
-from datetime import datetime
 
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 # Hazard classification and risk scoring
 HAZARD_MAPPING = {
@@ -45,7 +45,9 @@ def generate_summary(objects: List[Dict[str, Any]]) -> str:
     return "\n".join(parts)
 
 
-def generate_recommendations(risk_score: float, objects: List[Dict[str, Any]]) -> List[str]:
+def generate_recommendations(
+    risk_score: float, objects: List[Dict[str, Any]]
+) -> List[str]:
     """Generate action recommendations based on risk level and detections."""
     rec = []
     if risk_score > 0.7:
@@ -54,14 +56,14 @@ def generate_recommendations(risk_score: float, objects: List[Dict[str, Any]]) -
         rec.append("⚡ MEDIUM RISK: Standard monitoring and logging")
     else:
         rec.append("✓ LOW RISK: Continue routine operations")
-    
+
     for obj in objects:
         cls = obj.get("class", "").lower()
         if "person" in cls:
             rec.append("Ensure proper ID verification and access control")
         if "vehicle" in cls or any(x in cls for x in ["car", "truck", "motorcycle"]):
             rec.append("Verify vehicle authorization and safety compliance")
-    
+
     return rec
 
 
@@ -74,18 +76,20 @@ def generate_report(
     """Generate a complete smart report from detection data."""
     if not timestamp:
         timestamp = datetime.utcnow().isoformat() + "Z"
-    
+
     risk_score = calculate_risk_score(objects)
     summary = generate_summary(objects)
     recommendations = generate_recommendations(risk_score, objects)
-    
+
     return {
         "id": f"rpt_{detection_id[4:]}",  # rpt_000001
         "detection_id": detection_id,
         "timestamp": timestamp,
         "location": location or "Unknown",
         "risk_score": round(risk_score, 2),
-        "risk_level": "HIGH" if risk_score > 0.7 else ("MEDIUM" if risk_score > 0.4 else "LOW"),
+        "risk_level": (
+            "HIGH" if risk_score > 0.7 else ("MEDIUM" if risk_score > 0.4 else "LOW")
+        ),
         "objects_count": len(objects),
         "summary": summary,
         "recommendations": recommendations,

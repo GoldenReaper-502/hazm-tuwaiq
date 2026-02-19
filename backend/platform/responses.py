@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from typing import Any, Optional
+
 from pydantic import BaseModel
 
 
@@ -36,7 +37,7 @@ def ok(data: Any, request_id: str) -> dict:
         ok=True,
         data=data,
         error=None,
-        meta=APIMeta(request_id=request_id, timestamp=now, trace={"version":"v1"}),
+        meta=APIMeta(request_id=request_id, timestamp=now, trace={"version": "v1"}),
         success=True,
         trace_id=request_id,
         timestamp=now,
@@ -49,7 +50,7 @@ def fail(code: str, message: str, request_id: str, details: Any = None) -> dict:
         ok=False,
         data=None,
         error=APIError(code=code, message=message, details=details),
-        meta=APIMeta(request_id=request_id, timestamp=now, trace={"version":"v1"}),
+        meta=APIMeta(request_id=request_id, timestamp=now, trace={"version": "v1"}),
         success=False,
         trace_id=request_id,
         timestamp=now,

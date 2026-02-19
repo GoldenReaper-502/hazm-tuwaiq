@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Request
+
 from backend.platform.responses import ok
 
 router = APIRouter(prefix="/integrations", tags=["integrations"])

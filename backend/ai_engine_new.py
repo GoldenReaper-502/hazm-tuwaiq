@@ -4,12 +4,13 @@ Loads YOLO model once (via `init_model`) and exposes `detect_frame`.
 If `ultralytics` is not installed the module returns mock detections so
 the rest of the app continues working.
 """
+
 from __future__ import annotations
 
 import os
 import time
-from typing import Any, Dict, List, Optional
 from threading import Lock
+from typing import Any, Dict, List, Optional
 
 _MODEL = None
 _MODEL_LOCK = Lock()
@@ -76,12 +77,14 @@ def _boxes_from_result(r) -> List[Dict[str, Any]]:
             if label is None:
                 label = str(cls)
 
-            objs.append({
-                "class": label,
-                "confidence": conf,
-                "bbox": [x1, y1, x2, y2],
-                "box": [x1, y1, x2, y2],
-            })
+            objs.append(
+                {
+                    "class": label,
+                    "confidence": conf,
+                    "bbox": [x1, y1, x2, y2],
+                    "box": [x1, y1, x2, y2],
+                }
+            )
         except Exception:
             continue
 
@@ -102,7 +105,14 @@ def detect_frame(frame_bytes: bytes, conf_thresh: float = 0.25) -> Dict[str, Any
         return {
             "model": "mock",
             "timestamp": ts,
-            "objects": [{"class": "person", "confidence": 0.6, "bbox": [10, 10, 100, 200], "box": [10, 10, 100, 200]}],
+            "objects": [
+                {
+                    "class": "person",
+                    "confidence": 0.6,
+                    "bbox": [10, 10, 100, 200],
+                    "box": [10, 10, 100, 200],
+                }
+            ],
             "raw": None,
         }
 
@@ -125,10 +135,21 @@ def detect_frame(frame_bytes: bytes, conf_thresh: float = 0.25) -> Dict[str, Any
         }
 
     except Exception as e:
-        return {"model": "yolov8_error", "timestamp": ts, "objects": [], "raw": {"error": str(e)}}
+        return {
+            "model": "yolov8_error",
+            "timestamp": ts,
+            "objects": [],
+            "raw": {"error": str(e)},
+        }
 
 
-def detect_frame_enhanced(frame_bytes: bytes, conf_thresh: float = 0.25, tracked: bool = False, annotate: bool = False, camera_id: Optional[str] = None) -> Dict[str, Any]:
+def detect_frame_enhanced(
+    frame_bytes: bytes,
+    conf_thresh: float = 0.25,
+    tracked: bool = False,
+    annotate: bool = False,
+    camera_id: Optional[str] = None,
+) -> Dict[str, Any]:
     """Enhanced detect: runs `detect_frame`, optional lightweight tracking and annotation.
 
     Returns same dict as `detect_frame` with optional keys in `raw`: `annotated_b64`.
@@ -140,6 +161,7 @@ def detect_frame_enhanced(frame_bytes: bytes, conf_thresh: float = 0.25, tracked
     if tracked:
         try:
             from tracking import update as track_update
+
             objs = track_update(camera_id or "_local", objs)
         except Exception:
             pass
@@ -149,13 +171,16 @@ def detect_frame_enhanced(frame_bytes: bytes, conf_thresh: float = 0.25, tracked
         try:
             try:
                 import cv2
+
                 CV2 = True
             except Exception:
                 CV2 = False
 
             if CV2 and frame_bytes:
-                import numpy as np
                 import base64 as _b64
+
+                import numpy as np
+
                 arr = np.frombuffer(frame_bytes, dtype=np.uint8)
                 img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
                 if img is not None:
@@ -170,8 +195,16 @@ def detect_frame_enhanced(frame_bytes: bytes, conf_thresh: float = 0.25, tracked
                         txt = f"{label} {o.get('confidence',0):.2f}"
                         if tid is not None:
                             txt += f" id:{tid}"
-                        cv2.putText(img, txt, (x1, max(10, y1 - 5)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-                    ok, buf = cv2.imencode('.jpg', img)
+                        cv2.putText(
+                            img,
+                            txt,
+                            (x1, max(10, y1 - 5)),
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            0.5,
+                            (255, 255, 255),
+                            1,
+                        )
+                    ok, buf = cv2.imencode(".jpg", img)
                     if ok:
                         annotated_b64 = _b64.b64encode(buf.tobytes()).decode()
         except Exception:

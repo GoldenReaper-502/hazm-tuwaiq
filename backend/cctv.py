@@ -2,13 +2,14 @@
 store detections to SQLite. Built for stability: auto-reconnect,
 per-camera worker threads, safe DB writes.
 """
+
 from __future__ import annotations
 
+import json
+import os
+import sqlite3
 import threading
 import time
-import json
-import sqlite3
-import os
 from typing import Any, Dict, List, Optional
 
 
@@ -16,6 +17,7 @@ def _get_cv2():
     """Lazy import cv2 to prevent startup crashes"""
     try:
         import cv2
+
         return cv2
     except ImportError as e:
         raise RuntimeError(f"OpenCV not available: {e}")
@@ -23,6 +25,7 @@ def _get_cv2():
 
 try:
     import cv2
+
     CV2_AVAILABLE = True
 except Exception:
     CV2_AVAILABLE = False
@@ -33,18 +36,21 @@ except Exception:
 
 try:
     from backend import behavior
+
     BEHAVIOR_AVAILABLE = True
 except Exception:
     try:
         import behavior
+
         BEHAVIOR_AVAILABLE = True
     except Exception:
         BEHAVIOR_AVAILABLE = False
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 DB_PATH = Path(__file__).resolve().parent / "cctv.db"
 DB_LOCK = threading.Lock()
+
 
 # Ensure DB exists and has required tables
 def init_db() -> None:
@@ -97,7 +103,16 @@ def init_db() -> None:
 
 
 class Camera:
-    def __init__(self, id: str, name: str, rtsp_url: str, enabled: bool = False, fps: float = 2.0, zones: Optional[List[Dict]] = None, rules: Optional[Dict] = None):
+    def __init__(
+        self,
+        id: str,
+        name: str,
+        rtsp_url: str,
+        enabled: bool = False,
+        fps: float = 2.0,
+        zones: Optional[List[Dict]] = None,
+        rules: Optional[Dict] = None,
+    ):
         self.id = id
         self.name = name
         self.rtsp_url = rtsp_url
@@ -144,7 +159,9 @@ class CameraWorker(threading.Thread):
                 # Open capture if needed
                 if self.capture is None or not self.capture.isOpened():
                     cv2 = _get_cv2()  # Lazy import
-                    self.capture = cv2.VideoCapture(self.camera.rtsp_url, cv2.CAP_FFMPEG)
+                    self.capture = cv2.VideoCapture(
+                        self.camera.rtsp_url, cv2.CAP_FFMPEG
+                    )
                     # set small timeout / buffer
                     time.sleep(0.5)
 
@@ -166,7 +183,7 @@ class CameraWorker(threading.Thread):
                 # encode frame to JPEG bytes
                 try:
                     cv2 = _get_cv2()  # Lazy import
-                    ok, buf = cv2.imencode('.jpg', frame)
+                    ok, buf = cv2.imencode(".jpg", frame)
                     if not ok:
                         time.sleep(frame_interval)
                         continue
@@ -194,14 +211,20 @@ class CameraWorker(threading.Thread):
 
     def _process_frame(self, frame_bytes: bytes) -> None:
         try:
-            result = ai_engine.detect_frame(frame_bytes, conf_thresh=float(os.getenv("YOLO_CONF", "0.25")))
+            result = ai_engine.detect_frame(
+                frame_bytes, conf_thresh=float(os.getenv("YOLO_CONF", "0.25"))
+            )
             objects = result.get("objects", []) if isinstance(result, dict) else []
-            ts = result.get("timestamp") if isinstance(result, dict) else (datetime.utcnow().isoformat() + "Z")
+            ts = (
+                result.get("timestamp")
+                if isinstance(result, dict)
+                else (datetime.utcnow().isoformat() + "Z")
+            )
             # persist detections
             for obj in objects:
                 label = obj.get("class") or obj.get("label") or "unknown"
                 conf = float(obj.get("confidence", 0.0))
-                bbox = obj.get("bbox", obj.get("box", [0,0,0,0]))
+                bbox = obj.get("bbox", obj.get("box", [0, 0, 0, 0]))
                 store_detection(self.camera.id, ts, label, conf, bbox, raw=result)
             # run behavior processing (best-effort)
             try:
@@ -209,6 +232,7 @@ class CameraWorker(threading.Thread):
                     # enrich with simple tracking if available
                     try:
                         from tracking import update as track_update
+
                         objs_tracked = track_update(self.camera.id, objects)
                     except Exception:
                         objs_tracked = objects
@@ -229,8 +253,19 @@ class CameraManager:
         with DB_LOCK:
             conn = sqlite3.connect(DB_PATH)
             cur = conn.cursor()
-            cur.execute("INSERT OR REPLACE INTO cameras (id, name, rtsp_url, enabled, fps, zones, rules, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                        (cam.id, cam.name, cam.rtsp_url, int(cam.enabled), float(cam.fps), json.dumps(cam.zones), json.dumps(cam.rules), cam.created_at))
+            cur.execute(
+                "INSERT OR REPLACE INTO cameras (id, name, rtsp_url, enabled, fps, zones, rules, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    cam.id,
+                    cam.name,
+                    cam.rtsp_url,
+                    int(cam.enabled),
+                    float(cam.fps),
+                    json.dumps(cam.zones),
+                    json.dumps(cam.rules),
+                    cam.created_at,
+                ),
+            )
             conn.commit()
             conn.close()
 
@@ -242,7 +277,9 @@ class CameraManager:
             if not cur.fetchone():
                 conn.close()
                 return False
-            cur.execute("UPDATE cameras SET rules=? WHERE id=?", (json.dumps(rules), camera_id))
+            cur.execute(
+                "UPDATE cameras SET rules=? WHERE id=?", (json.dumps(rules), camera_id)
+            )
             conn.commit()
             conn.close()
         return True
@@ -251,21 +288,25 @@ class CameraManager:
         with DB_LOCK:
             conn = sqlite3.connect(DB_PATH)
             cur = conn.cursor()
-            cur.execute("SELECT id, name, rtsp_url, enabled, fps, zones, rules, created_at FROM cameras")
+            cur.execute(
+                "SELECT id, name, rtsp_url, enabled, fps, zones, rules, created_at FROM cameras"
+            )
             rows = cur.fetchall()
             conn.close()
         cams = []
         for r in rows:
-            cams.append({
-                "id": r[0],
-                "name": r[1],
-                "rtsp_url": r[2],
-                "enabled": bool(r[3]),
-                "fps": float(r[4]),
-                "zones": json.loads(r[5]) if r[5] else [],
-                "rules": json.loads(r[6]) if r[6] else {},
-                "created_at": r[7],
-            })
+            cams.append(
+                {
+                    "id": r[0],
+                    "name": r[1],
+                    "rtsp_url": r[2],
+                    "enabled": bool(r[3]),
+                    "fps": float(r[4]),
+                    "zones": json.loads(r[5]) if r[5] else [],
+                    "rules": json.loads(r[6]) if r[6] else {},
+                    "created_at": r[7],
+                }
+            )
         return cams
 
     def update_camera_zones(self, camera_id: str, zones: List[Dict[str, Any]]) -> bool:
@@ -276,7 +317,9 @@ class CameraManager:
             if not cur.fetchone():
                 conn.close()
                 return False
-            cur.execute("UPDATE cameras SET zones=? WHERE id=?", (json.dumps(zones), camera_id))
+            cur.execute(
+                "UPDATE cameras SET zones=? WHERE id=?", (json.dumps(zones), camera_id)
+            )
             conn.commit()
             conn.close()
         return True
@@ -286,18 +329,33 @@ class CameraManager:
         with DB_LOCK:
             conn = sqlite3.connect(DB_PATH)
             cur = conn.cursor()
-            cur.execute("SELECT id, name, rtsp_url, enabled, fps, zones, rules FROM cameras WHERE id=?", (camera_id,))
+            cur.execute(
+                "SELECT id, name, rtsp_url, enabled, fps, zones, rules FROM cameras WHERE id=?",
+                (camera_id,),
+            )
             row = cur.fetchone()
             conn.close()
         if not row:
             return False
-        cam = Camera(id=row[0], name=row[1], rtsp_url=row[2], enabled=bool(row[3]), fps=float(row[4] or 2.0), zones=json.loads(row[5] or "[]"), rules=json.loads(row[6] or "{}"))
+        cam = Camera(
+            id=row[0],
+            name=row[1],
+            rtsp_url=row[2],
+            enabled=bool(row[3]),
+            fps=float(row[4] or 2.0),
+            zones=json.loads(row[5] or "[]"),
+            rules=json.loads(row[6] or "{}"),
+        )
         if camera_id in self.workers and self.workers[camera_id]["running"]:
             return True
         stop_event = threading.Event()
         worker = CameraWorker(cam, stop_event)
         worker.start()
-        self.workers[camera_id] = {"worker": worker, "stop_event": stop_event, "running": True}
+        self.workers[camera_id] = {
+            "worker": worker,
+            "stop_event": stop_event,
+            "running": True,
+        }
         # mark enabled
         with DB_LOCK:
             conn = sqlite3.connect(DB_PATH)
@@ -338,7 +396,10 @@ class CameraManager:
         with DB_LOCK:
             conn = sqlite3.connect(DB_PATH)
             cur = conn.cursor()
-            cur.execute("SELECT id, name, rtsp_url, enabled, fps, zones, rules, created_at FROM cameras WHERE id=?", (camera_id,))
+            cur.execute(
+                "SELECT id, name, rtsp_url, enabled, fps, zones, rules, created_at FROM cameras WHERE id=?",
+                (camera_id,),
+            )
             row = cur.fetchone()
             conn.close()
         if not row:
@@ -349,27 +410,46 @@ class CameraManager:
             "name": row[1],
             "enabled": bool(row[3]),
             "running": bool(entry["running"]) if entry else False,
-            "last_seen": getattr(entry["worker"], "last_frame_ts", None) if entry else None,
+            "last_seen": (
+                getattr(entry["worker"], "last_frame_ts", None) if entry else None
+            ),
         }
 
 
 # Persistence helpers
-def store_detection(camera_id: str, ts: str, label: str, confidence: float, bbox: List[float], raw: Optional[Dict] = None) -> None:
+def store_detection(
+    camera_id: str,
+    ts: str,
+    label: str,
+    confidence: float,
+    bbox: List[float],
+    raw: Optional[Dict] = None,
+) -> None:
     with DB_LOCK:
         conn = sqlite3.connect(DB_PATH)
         cur = conn.cursor()
-        cur.execute("INSERT INTO detections (camera_id, ts, label, confidence, bbox, raw) VALUES (?, ?, ?, ?, ?, ?)",
-                    (camera_id, ts, label, confidence, json.dumps(bbox), json.dumps(raw)))
+        cur.execute(
+            "INSERT INTO detections (camera_id, ts, label, confidence, bbox, raw) VALUES (?, ?, ?, ?, ?, ?)",
+            (camera_id, ts, label, confidence, json.dumps(bbox), json.dumps(raw)),
+        )
         conn.commit()
         conn.close()
 
 
-def store_alert(camera_id: str, ts: str, event_type: str, severity: str, payload: Optional[Dict] = None) -> None:
+def store_alert(
+    camera_id: str,
+    ts: str,
+    event_type: str,
+    severity: str,
+    payload: Optional[Dict] = None,
+) -> None:
     with DB_LOCK:
         conn = sqlite3.connect(DB_PATH)
         cur = conn.cursor()
-        cur.execute("INSERT INTO alerts (camera_id, ts, event_type, severity, payload) VALUES (?, ?, ?, ?, ?)",
-                    (camera_id, ts, event_type, severity, json.dumps(payload)))
+        cur.execute(
+            "INSERT INTO alerts (camera_id, ts, event_type, severity, payload) VALUES (?, ?, ?, ?, ?)",
+            (camera_id, ts, event_type, severity, json.dumps(payload)),
+        )
         conn.commit()
         conn.close()
 
@@ -392,9 +472,11 @@ def store_alert(camera_id: str, ts: str, event_type: str, severity: str, payload
                         break
 
             if webhook_url:
+
                 def _dispatch():
                     try:
                         import requests
+
                         body = {
                             "camera_id": camera_id,
                             "ts": ts,
@@ -412,50 +494,70 @@ def store_alert(camera_id: str, ts: str, event_type: str, severity: str, payload
         pass
 
 
-def query_detections(camera_id: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
+def query_detections(
+    camera_id: Optional[str] = None, limit: int = 100
+) -> List[Dict[str, Any]]:
     with DB_LOCK:
         conn = sqlite3.connect(DB_PATH)
         cur = conn.cursor()
         if camera_id:
-            cur.execute("SELECT id, camera_id, ts, label, confidence, bbox, raw FROM detections WHERE camera_id=? ORDER BY id DESC LIMIT ?", (camera_id, limit))
+            cur.execute(
+                "SELECT id, camera_id, ts, label, confidence, bbox, raw FROM detections WHERE camera_id=? ORDER BY id DESC LIMIT ?",
+                (camera_id, limit),
+            )
         else:
-            cur.execute("SELECT id, camera_id, ts, label, confidence, bbox, raw FROM detections ORDER BY id DESC LIMIT ?", (limit,))
+            cur.execute(
+                "SELECT id, camera_id, ts, label, confidence, bbox, raw FROM detections ORDER BY id DESC LIMIT ?",
+                (limit,),
+            )
         rows = cur.fetchall()
         conn.close()
     out = []
     for r in rows:
-        out.append({
-            "id": r[0],
-            "camera_id": r[1],
-            "ts": r[2],
-            "label": r[3],
-            "confidence": r[4],
-            "bbox": json.loads(r[5]) if r[5] else None,
-            "raw": json.loads(r[6]) if r[6] else None,
-        })
+        out.append(
+            {
+                "id": r[0],
+                "camera_id": r[1],
+                "ts": r[2],
+                "label": r[3],
+                "confidence": r[4],
+                "bbox": json.loads(r[5]) if r[5] else None,
+                "raw": json.loads(r[6]) if r[6] else None,
+            }
+        )
     return out
 
 
-def query_alerts(camera_id: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
+def query_alerts(
+    camera_id: Optional[str] = None, limit: int = 100
+) -> List[Dict[str, Any]]:
     with DB_LOCK:
         conn = sqlite3.connect(DB_PATH)
         cur = conn.cursor()
         if camera_id:
-            cur.execute("SELECT id, camera_id, ts, event_type, severity, payload FROM alerts WHERE camera_id=? ORDER BY id DESC LIMIT ?", (camera_id, limit))
+            cur.execute(
+                "SELECT id, camera_id, ts, event_type, severity, payload FROM alerts WHERE camera_id=? ORDER BY id DESC LIMIT ?",
+                (camera_id, limit),
+            )
         else:
-            cur.execute("SELECT id, camera_id, ts, event_type, severity, payload FROM alerts ORDER BY id DESC LIMIT ?", (limit,))
+            cur.execute(
+                "SELECT id, camera_id, ts, event_type, severity, payload FROM alerts ORDER BY id DESC LIMIT ?",
+                (limit,),
+            )
         rows = cur.fetchall()
         conn.close()
     out = []
     for r in rows:
-        out.append({
-            "id": r[0],
-            "camera_id": r[1],
-            "ts": r[2],
-            "event_type": r[3],
-            "severity": r[4],
-            "payload": json.loads(r[5]) if r[5] else None,
-        })
+        out.append(
+            {
+                "id": r[0],
+                "camera_id": r[1],
+                "ts": r[2],
+                "event_type": r[3],
+                "severity": r[4],
+                "payload": json.loads(r[5]) if r[5] else None,
+            }
+        )
     return out
 
 

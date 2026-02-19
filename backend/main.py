@@ -3,31 +3,32 @@ HAZM TUWAIQ - Main Application (Refactored & Production-Ready)
 Complete integration with Authentication, RBAC, and all modules
 """
 
+import os
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException, Header, Depends
+from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
-import os
-
-from fastapi.exceptions import RequestValidationError
-from backend.platform.logging_setup import setup_logging
-from backend.platform.middleware import RequestContextMiddleware, SecurityHeadersMiddleware, RateLimitMiddleware
-from backend.platform.routers import ALL_ROUTERS
-from backend.platform.bootstrap import seed_demo_data
-from backend.platform.errors import validation_exception_handler, generic_exception_handler, http_exception_handler
 
 # Import Authentication System
-from backend.auth import (
-    auth_system, 
-    User, 
-    UserRole, 
-    Permission,
-    get_current_user
+from backend.auth import Permission, User, UserRole, auth_system, get_current_user
+from backend.platform.bootstrap import seed_demo_data
+from backend.platform.errors import (
+    generic_exception_handler,
+    http_exception_handler,
+    validation_exception_handler,
 )
+from backend.platform.logging_setup import setup_logging
+from backend.platform.middleware import (
+    RateLimitMiddleware,
+    RequestContextMiddleware,
+    SecurityHeadersMiddleware,
+)
+from backend.platform.routers import ALL_ROUTERS
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -64,7 +65,11 @@ app.add_middleware(
 # Mount static files (Frontend)
 frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
 if os.path.exists(frontend_path):
-    app.mount("/assets", StaticFiles(directory=os.path.join(frontend_path, "assets")), name="assets")
+    app.mount(
+        "/assets",
+        StaticFiles(directory=os.path.join(frontend_path, "assets")),
+        name="assets",
+    )
 
 
 # ==================== Module Imports ====================
@@ -75,6 +80,7 @@ MODULES_STATUS = {}
 # Core Production API
 try:
     from backend.innovation.core_api import router as core_router
+
     app.include_router(core_router, prefix="/api/core", tags=["🚀 Core Production API"])
     MODULES_STATUS["core_api"] = True
 except Exception as e:
@@ -84,7 +90,10 @@ except Exception as e:
 # Sovereignty Engine
 try:
     from backend.innovation.sovereignty_api import router as sovereignty_router
-    app.include_router(sovereignty_router, prefix="/api/sovereignty", tags=["🌌 Sovereignty Engine"])
+
+    app.include_router(
+        sovereignty_router, prefix="/api/sovereignty", tags=["🌌 Sovereignty Engine"]
+    )
     MODULES_STATUS["sovereignty_engine"] = True
 except Exception as e:
     print(f"⚠️ Sovereignty Engine: {e}")
@@ -93,7 +102,12 @@ except Exception as e:
 # Governance & Organization
 try:
     from backend.governance.api import router as governance_router
-    app.include_router(governance_router, prefix="/api/governance", tags=["🏢 Organization & Governance"])
+
+    app.include_router(
+        governance_router,
+        prefix="/api/governance",
+        tags=["🏢 Organization & Governance"],
+    )
     MODULES_STATUS["governance"] = True
 except Exception as e:
     print(f"⚠️ Governance: {e}")
@@ -102,7 +116,10 @@ except Exception as e:
 # Alerts & Actions
 try:
     from backend.alerts.api import router as alerts_router
-    app.include_router(alerts_router, prefix="/api/alerts", tags=["🚨 Alerts & Actions"])
+
+    app.include_router(
+        alerts_router, prefix="/api/alerts", tags=["🚨 Alerts & Actions"]
+    )
     MODULES_STATUS["alerts"] = True
 except Exception as e:
     print(f"⚠️ Alerts: {e}")
@@ -111,7 +128,10 @@ except Exception as e:
 # Predictive Safety
 try:
     from backend.predictive.api import router as predictive_router
-    app.include_router(predictive_router, prefix="/api/predictive", tags=["🔮 Predictive Safety"])
+
+    app.include_router(
+        predictive_router, prefix="/api/predictive", tags=["🔮 Predictive Safety"]
+    )
     MODULES_STATUS["predictive"] = True
 except Exception as e:
     print(f"⚠️ Predictive: {e}")
@@ -120,7 +140,10 @@ except Exception as e:
 # Reports & Analytics
 try:
     from backend.reports.api import router as reports_router
-    app.include_router(reports_router, prefix="/api/reports", tags=["📊 Reports & Analytics"])
+
+    app.include_router(
+        reports_router, prefix="/api/reports", tags=["📊 Reports & Analytics"]
+    )
     MODULES_STATUS["reports"] = True
 except Exception as e:
     print(f"⚠️ Reports: {e}")
@@ -138,17 +161,18 @@ if MODULES_STATUS.get("predictive") is False:
 # Exclusive Features
 try:
     from backend.exclusive import (
-        safety_immune_system,
-        root_cause_ai,
-        environment_fusion,
-        behavioral_recognition,
-        predictive_maintenance,
         advanced_fatigue_detection,
+        behavioral_recognition,
         enhanced_autonomous_response,
         enhanced_digital_twin,
-        intelligent_compliance_drift,
         enhanced_intent_aware_safety,
+        environment_fusion,
+        intelligent_compliance_drift,
+        predictive_maintenance,
+        root_cause_ai,
+        safety_immune_system,
     )
+
     MODULES_STATUS["exclusive_features"] = True
 except Exception as e:
     print(f"⚠️ Exclusive Features: {e}")
@@ -156,6 +180,7 @@ except Exception as e:
 
 
 # ==================== Pydantic Models ====================
+
 
 class LoginRequest(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
@@ -181,6 +206,7 @@ class DashboardResponse(BaseModel):
 
 # ==================== Authentication Endpoints ====================
 
+
 @app.post("/api/auth/login", response_model=LoginResponse, tags=["🔐 Authentication"])
 def login(credentials: LoginRequest):
     """
@@ -189,30 +215,25 @@ def login(credentials: LoginRequest):
     """
     try:
         token = auth_system.authenticate(
-            username=credentials.username,
-            password=credentials.password
+            username=credentials.username, password=credentials.password
         )
-        
+
         if not token:
             return LoginResponse(
-                success=False,
-                message="اسم المستخدم أو كلمة المرور غير صحيحة"
+                success=False, message="اسم المستخدم أو كلمة المرور غير صحيحة"
             )
-        
+
         user = auth_system.get_user_by_token(token)
-        
+
         return LoginResponse(
             success=True,
             token=token,
             user=user.to_dict() if user else None,
-            message=f"مرحباً {user.full_name if user else ''}"
+            message=f"مرحباً {user.full_name if user else ''}",
         )
-    
+
     except ValueError as e:
-        return LoginResponse(
-            success=False,
-            message=str(e)
-        )
+        return LoginResponse(success=False, message=str(e))
 
 
 @app.post("/api/auth/logout", tags=["🔐 Authentication"])
@@ -222,13 +243,13 @@ def logout(authorization: str = Header(None)):
     """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token required")
-    
+
     token = authorization.replace("Bearer ", "")
     success = auth_system.logout(token)
-    
+
     return {
         "success": success,
-        "message": "تم تسجيل الخروج بنجاح" if success else "فشل تسجيل الخروج"
+        "message": "تم تسجيل الخروج بنجاح" if success else "فشل تسجيل الخروج",
     }
 
 
@@ -239,13 +260,13 @@ def get_current_user_info(authorization: str = Header(None)):
     """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token required")
-    
+
     token = authorization.replace("Bearer ", "")
     user = auth_system.get_user_by_token(token)
-    
+
     if not user:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
-    
+
     return {
         "user": user.to_dict(),
         "permissions": [p.value for p in user.get_permissions()],
@@ -259,20 +280,21 @@ def get_dashboard(authorization: str = Header(None)):
     """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token required")
-    
+
     token = authorization.replace("Bearer ", "")
     dashboard_data = auth_system.get_user_dashboard_data(token)
-    
+
     if "error" in dashboard_data:
         raise HTTPException(status_code=401, detail=dashboard_data["error"])
-    
+
     # Add modules status
     dashboard_data["modules_available"] = MODULES_STATUS
-    
+
     return dashboard_data
 
 
 # ==================== Public Endpoints ====================
+
 
 @app.get("/", tags=["🏠 Home"])
 def root():
@@ -305,9 +327,11 @@ def health_check():
     # Count operational modules
     operational_count = sum(1 for status in MODULES_STATUS.values() if status)
     total_modules = len(MODULES_STATUS)
-    
-    health_percentage = (operational_count / total_modules * 100) if total_modules > 0 else 0
-    
+
+    health_percentage = (
+        (operational_count / total_modules * 100) if total_modules > 0 else 0
+    )
+
     return {
         "status": "healthy" if health_percentage > 70 else "degraded",
         "service": "HAZM TUWAIQ - Safety Phenomenon",
@@ -321,8 +345,6 @@ def health_check():
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "uptime": "99.9%",
     }
-
-
 
 
 @app.api_route("/api/", methods=["GET", "POST", "OPTIONS"], tags=["🏠 API Root"])
@@ -343,7 +365,6 @@ def api_root():
     return response
 
 
-
 @app.get("/api/governance/org/structure", tags=["🏢 Governance Compatibility"])
 def governance_structure_compat():
     """Compatibility endpoint kept for legacy clients and production tests."""
@@ -354,6 +375,7 @@ def governance_structure_compat():
             "model": "RBAC + governance matrix",
         },
     }
+
 
 @app.get("/api/platform/info", tags=["ℹ️ Platform Info"])
 def platform_info():
@@ -366,7 +388,6 @@ def platform_info():
         "tagline": "Before ≠ After",
         "description": "منصة السلامة الذكية مع وعي سياقي كامل",
         "philosophy": "ليس منتجاً يُباع... بل معيار يُفرض",
-        
         "statistics": {
             "total_code_lines": "26,000+",
             "api_endpoints": "150+",
@@ -375,7 +396,6 @@ def platform_info():
             "supported_roles": 5,
             "response_time_ms": "<200",
         },
-        
         "features": {
             "core": [
                 "🔍 Real-time AI Detection (YOLOv8, MediaPipe)",
@@ -397,31 +417,32 @@ def platform_info():
                 "🎯 Intent-Aware Safety",
             ],
         },
-        
         "security": {
             "authentication": "JWT-based",
             "authorization": "RBAC (Role-Based Access Control)",
             "encryption": "SSL/TLS",
             "rate_limiting": "Enabled",
         },
-        
         "deployment": {
             "options": ["Docker Compose", "Kubernetes", "Cloud (AWS/Azure/GCP)"],
             "scalability": "10,000+ concurrent users",
             "availability": "99.9% SLA",
         },
-        
         "modules_status": MODULES_STATUS,
     }
 
 
-
-
 @app.get("/docs", include_in_schema=False)
 def docs_redirect():
-    return JSONResponse(status_code=307, content={"detail":"Use /api/docs"}, headers={"Location":"/api/docs"})
+    return JSONResponse(
+        status_code=307,
+        content={"detail": "Use /api/docs"},
+        headers={"Location": "/api/docs"},
+    )
+
 
 # ==================== Frontend Routes ====================
+
 
 @app.get("/login", tags=["🌐 Frontend"])
 def login_page():
@@ -451,6 +472,7 @@ app.add_exception_handler(Exception, generic_exception_handler)
 
 # ==================== Error Handlers ====================
 
+
 @app.exception_handler(404)
 async def not_found_handler(request, exc):
     return JSONResponse(
@@ -459,7 +481,7 @@ async def not_found_handler(request, exc):
             "error": "Not Found",
             "message": "المسار المطلوب غير موجود",
             "path": str(request.url.path),
-        }
+        },
     )
 
 
@@ -470,11 +492,12 @@ async def internal_error_handler(request, exc):
         content={
             "error": "Internal Server Error",
             "message": "حدث خطأ داخلي في الخادم",
-        }
+        },
     )
 
 
 # ==================== Startup Event ====================
+
 
 @app.on_event("startup")
 async def startup_event():

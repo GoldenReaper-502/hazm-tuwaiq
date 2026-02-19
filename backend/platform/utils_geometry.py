@@ -8,7 +8,9 @@ def point_in_polygon(point: Tuple[float, float], polygon: List[List[float]]) -> 
     for i in range(len(polygon)):
         xi, yi = polygon[i]
         xj, yj = polygon[j]
-        intersect = ((yi > y) != (yj > y)) and (x < (xj - xi) * (y - yi) / ((yj - yi) + 1e-9) + xi)
+        intersect = ((yi > y) != (yj > y)) and (
+            x < (xj - xi) * (y - yi) / ((yj - yi) + 1e-9) + xi
+        )
         if intersect:
             inside = not inside
         j = i

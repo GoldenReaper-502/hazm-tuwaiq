@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request
-from backend.platform.responses import ok
+
 from backend.platform.db import get_conn
+from backend.platform.responses import ok
 
 router = APIRouter(prefix="/predictive", tags=["predictive"])
 
@@ -22,7 +23,12 @@ def hotspots(request: Request):
 
     ranked = []
     for r in rows:
-        score = r["incidents"] * 2 + r["high_risk"] * 3 + r["unsafe_obs"] + r["env_exceed"] * 2
+        score = (
+            r["incidents"] * 2
+            + r["high_risk"] * 3
+            + r["unsafe_obs"]
+            + r["env_exceed"] * 2
+        )
         ranked.append({"site": r["site"], "hotspot_score": score})
 
     ranked.sort(key=lambda x: x["hotspot_score"], reverse=True)
@@ -32,4 +38,7 @@ def hotspots(request: Request):
         "Engineering controls in hotspot zones",
         "Short-interval environmental monitoring",
     ]
-    return ok({"top_5_hotspots": ranked[:5], "recommended_interventions": interventions}, request.state.request_id)
+    return ok(
+        {"top_5_hotspots": ranked[:5], "recommended_interventions": interventions},
+        request.state.request_id,
+    )

@@ -1,9 +1,11 @@
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
-import uuid
+
 import bcrypt
 import jwt
-from fastapi import HTTPException, Header
+from fastapi import Header, HTTPException
+
 from backend.platform.config import settings
 from backend.platform.db import get_conn
 
@@ -31,8 +33,12 @@ def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode(), hashed.encode())
 
 
-def create_token(username: str, role: str, token_type: str = "access", minutes: int | None = None) -> str:
-    expiry_mins = minutes if minutes is not None else settings.access_token_expire_minutes
+def create_token(
+    username: str, role: str, token_type: str = "access", minutes: int | None = None
+) -> str:
+    expiry_mins = (
+        minutes if minutes is not None else settings.access_token_expire_minutes
+    )
     exp = datetime.now(timezone.utc) + timedelta(minutes=expiry_mins)
     payload: dict[str, Any] = {
         "sub": username,
@@ -62,7 +68,10 @@ def current_user(authorization: str = Header(default="")) -> dict:
     if payload.get("type") != "access":
         raise HTTPException(status_code=401, detail="Invalid token type")
     with get_conn() as conn:
-        row = conn.execute("SELECT username, role, department, full_name, site FROM users WHERE username=?", (payload["sub"],)).fetchone()
+        row = conn.execute(
+            "SELECT username, role, department, full_name, site FROM users WHERE username=?",
+            (payload["sub"],),
+        ).fetchone()
     if not row:
         raise HTTPException(status_code=401, detail="User not found")
     data = dict(row)

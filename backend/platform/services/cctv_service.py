@@ -1,9 +1,10 @@
 """CCTV service abstraction with safe fallback to stub implementation."""
 
 from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
 from typing import Any
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,9 @@ class DetectionResult:
 
 
 class CCTVImplementation:
-    def detect(self, frame_bytes: bytes) -> DetectionResult:  # pragma: no cover - interface
+    def detect(
+        self, frame_bytes: bytes
+    ) -> DetectionResult:  # pragma: no cover - interface
         raise NotImplementedError
 
 
@@ -23,6 +26,7 @@ class RealCCTVImplementation(CCTVImplementation):
     def __init__(self):
         try:
             from backend import ai_engine
+
             self.ai_engine = ai_engine
             self.provider = "backend.ai_engine"
         except Exception as e:

@@ -1,9 +1,11 @@
 import time
 import uuid
 from collections import defaultdict, deque
-from starlette.middleware.base import BaseHTTPMiddleware
+
 from fastapi import Request
 from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
+
 from backend.platform.config import settings
 from backend.platform.responses import fail
 
@@ -45,6 +47,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         while q and now - q[0] > window:
             q.popleft()
         if len(q) >= settings.rate_limit_per_minute:
-            return JSONResponse(status_code=429, content=fail("RATE_LIMIT", "Rate limit exceeded", getattr(request.state, "request_id", "n/a")))
+            return JSONResponse(
+                status_code=429,
+                content=fail(
+                    "RATE_LIMIT",
+                    "Rate limit exceeded",
+                    getattr(request.state, "request_id", "n/a"),
+                ),
+            )
         q.append(now)
         return await call_next(request)

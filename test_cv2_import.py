@@ -5,11 +5,13 @@ Test cv2 import to verify OpenCV is working correctly
 
 import sys
 
+
 def test_cv2_import():
     """Test basic cv2 import"""
     print("Testing cv2 import...")
     try:
         import cv2
+
         print(f"✅ cv2 imported successfully!")
         print(f"   Version: {cv2.__version__}")
         print(f"   Build info: {cv2.getBuildInformation()[:200]}...")
@@ -21,18 +23,19 @@ def test_cv2_import():
         print(f"⚠️  cv2 imported but error getting info: {e}")
         return True
 
+
 def test_lazy_imports():
     """Test lazy imports from our modules"""
     print("\nTesting lazy imports from modules...")
-    
+
     modules_to_test = [
-        'backend.cctv.rtsp_handler',
-        'backend.ai_core.yolo_engine',
-        'backend.ai_core.pose_estimation',
-        'backend.ai_core.fatigue_detection',
-        'backend.cctv.frame_processor',
+        "backend.cctv.rtsp_handler",
+        "backend.ai_core.yolo_engine",
+        "backend.ai_core.pose_estimation",
+        "backend.ai_core.fatigue_detection",
+        "backend.cctv.frame_processor",
     ]
-    
+
     for module_name in modules_to_test:
         try:
             __import__(module_name)
@@ -40,17 +43,18 @@ def test_lazy_imports():
         except Exception as e:
             print(f"❌ {module_name} failed: {e}")
             return False
-    
+
     return True
+
 
 if __name__ == "__main__":
     print("=" * 60)
     print("OpenCV Import Test")
     print("=" * 60)
-    
+
     cv2_ok = test_cv2_import()
     lazy_ok = test_lazy_imports()
-    
+
     print("\n" + "=" * 60)
     if cv2_ok and lazy_ok:
         print("✅ ALL TESTS PASSED")

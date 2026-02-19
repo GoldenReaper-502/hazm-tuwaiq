@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Optional, List
+from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 app = FastAPI(
     title="HAZM TUWAIQ - The Phenomenon",
     version="4.0.0",
-    description="ليست منصة... بل ظاهرة تغيّر مفهوم السلامة عالمياً | Before HAZM TUWAIQ ≠ After HAZM TUWAIQ"
+    description="ليست منصة... بل ظاهرة تغيّر مفهوم السلامة عالمياً | Before HAZM TUWAIQ ≠ After HAZM TUWAIQ",
 )
 
 # إضافة CORS
@@ -23,6 +23,7 @@ app.add_middleware(
 # استيراد Core Production API
 try:
     from innovation.core_api import router as core_router
+
     app.include_router(core_router, prefix="/api", tags=["🚀 Core Production API"])
     CORE_API_ENABLED = True
 except Exception as e:
@@ -32,7 +33,10 @@ except Exception as e:
 # استيراد النظام السيادي (Sovereignty Engine)
 try:
     from innovation.sovereignty_api import router as sovereignty_router
-    app.include_router(sovereignty_router, prefix="/api/sovereignty", tags=["🌌 Sovereignty Engine"])
+
+    app.include_router(
+        sovereignty_router, prefix="/api/sovereignty", tags=["🌌 Sovereignty Engine"]
+    )
     SOVEREIGNTY_ENABLED = True
 except Exception as e:
     print(f"⚠️ تحذير: النظام السيادي غير متاح: {e}")
@@ -41,6 +45,7 @@ except Exception as e:
 # استيراد الميزات المتقدمة
 try:
     from innovation.advanced_api import router as advanced_router
+
     app.include_router(advanced_router, prefix="/api/v2", tags=["Advanced Features"])
     ADVANCED_FEATURES_ENABLED = True
 except Exception as e:
@@ -50,7 +55,10 @@ except Exception as e:
 # استيراد الميزات المتقدمة من المستوى التالي
 try:
     from innovation.next_level_api import router as next_level_router
-    app.include_router(next_level_router, prefix="/api/v3", tags=["Next-Level Innovations"])
+
+    app.include_router(
+        next_level_router, prefix="/api/v3", tags=["Next-Level Innovations"]
+    )
     NEXT_LEVEL_FEATURES_ENABLED = True
 except Exception as e:
     print(f"⚠️ تحذير: الميزات المتقدمة (v3) غير متاحة: {e}")
@@ -59,7 +67,12 @@ except Exception as e:
 # استيراد Governance & Organization API
 try:
     from governance.api import router as governance_router
-    app.include_router(governance_router, prefix="/api/governance", tags=["🏢 Organization & Governance"])
+
+    app.include_router(
+        governance_router,
+        prefix="/api/governance",
+        tags=["🏢 Organization & Governance"],
+    )
     GOVERNANCE_ENABLED = True
 except Exception as e:
     print(f"⚠️ تحذير: Governance API غير متاح: {e}")
@@ -68,7 +81,10 @@ except Exception as e:
 # استيراد Alerts & Actions API
 try:
     from alerts.api import router as alerts_router
-    app.include_router(alerts_router, prefix="/api/alerts", tags=["🚨 Alerts & Actions"])
+
+    app.include_router(
+        alerts_router, prefix="/api/alerts", tags=["🚨 Alerts & Actions"]
+    )
     ALERTS_ENABLED = True
 except Exception as e:
     print(f"⚠️ تحذير: Alerts API غير متاح: {e}")
@@ -77,7 +93,10 @@ except Exception as e:
 # استيراد Predictive Safety API
 try:
     from predictive.api import router as predictive_router
-    app.include_router(predictive_router, prefix="/api/predictive", tags=["🔮 Predictive Safety"])
+
+    app.include_router(
+        predictive_router, prefix="/api/predictive", tags=["🔮 Predictive Safety"]
+    )
     PREDICTIVE_ENABLED = True
 except Exception as e:
     print(f"⚠️ تحذير: Predictive API غير متاح: {e}")
@@ -86,7 +105,10 @@ except Exception as e:
 # استيراد Reports & Analytics API
 try:
     from reports.api import router as reports_router
-    app.include_router(reports_router, prefix="/api/reports", tags=["📊 Reports & Analytics"])
+
+    app.include_router(
+        reports_router, prefix="/api/reports", tags=["📊 Reports & Analytics"]
+    )
     REPORTS_ENABLED = True
 except Exception as e:
     print(f"⚠️ تحذير: Reports API غير متاح: {e}")
@@ -140,16 +162,16 @@ def root():
             "advanced": "/api/v2/*",
             "next_level": "/api/v3/*",
             "docs": "/docs",
-            "openapi": "/openapi.json"
+            "openapi": "/openapi.json",
         },
         "modules_status": {
-            "core_api": CORE_API_ENABLED if 'CORE_API_ENABLED' in dir() else False,
+            "core_api": CORE_API_ENABLED if "CORE_API_ENABLED" in dir() else False,
             "sovereignty": SOVEREIGNTY_ENABLED,
             "advanced": ADVANCED_FEATURES_ENABLED,
-            "next_level": NEXT_LEVEL_FEATURES_ENABLED
+            "next_level": NEXT_LEVEL_FEATURES_ENABLED,
         },
         "message": "🌌 Production-Ready Safety Phenomenon",
-        "timestamp": utc_now()
+        "timestamp": utc_now(),
     }
 
 
@@ -160,20 +182,29 @@ def health_check():
     JSON-only response with component status
     """
     components_status = {}
-    
+
     # فحص كل مكون
     components_status["api"] = "operational"
-    components_status["core_api"] = "operational" if 'CORE_API_ENABLED' in dir() and CORE_API_ENABLED else "disabled"
-    components_status["sovereignty_engine"] = "operational" if SOVEREIGNTY_ENABLED else "disabled"
-    components_status["advanced_features"] = "operational" if ADVANCED_FEATURES_ENABLED else "disabled"
-    components_status["next_level_features"] = "operational" if NEXT_LEVEL_FEATURES_ENABLED else "disabled"
-    
+    components_status["core_api"] = (
+        "operational"
+        if "CORE_API_ENABLED" in dir() and CORE_API_ENABLED
+        else "disabled"
+    )
+    components_status["sovereignty_engine"] = (
+        "operational" if SOVEREIGNTY_ENABLED else "disabled"
+    )
+    components_status["advanced_features"] = (
+        "operational" if ADVANCED_FEATURES_ENABLED else "disabled"
+    )
+    components_status["next_level_features"] = (
+        "operational" if NEXT_LEVEL_FEATURES_ENABLED else "disabled"
+    )
+
     # حالة عامة
     all_operational = all(
-        status in ["operational", "disabled"] 
-        for status in components_status.values()
+        status in ["operational", "disabled"] for status in components_status.values()
     )
-    
+
     return {
         "status": "healthy" if all_operational else "degraded",
         "service": "HAZM TUWAIQ - Production Safety Platform",
@@ -181,7 +212,7 @@ def health_check():
         "components": components_status,
         "timestamp": utc_now(),
         "uptime": "99.9%",
-        "response_time_ms": 12
+        "response_time_ms": 12,
     }
 
 
@@ -191,75 +222,76 @@ def list_features():
     features = {
         "phenomenon_name": "HAZM TUWAIQ",
         "tagline": "Before ≠ After",
-        
-        "sovereignty_features": [
-            "🔍 Contextual Sensing - الاستشعار السياقي",
-            "⚖️ Sovereign Decision - القرار السيادي",
-            "⚡ Autonomous Action - التنفيذ الذاتي",
-            "💡 Complete Explanation - التفسير الكامل",
-            "📋 Full Accountability - المحاسبة الكاملة",
-            "🔮 Future Forecasting - التنبؤ بالمستقبل",
-            "👑 Governance Intelligence - ذكاء الحوكمة",
-            "🌌 Shadow Reality - الواقع الموازي"
-        ] if SOVEREIGNTY_ENABLED else [],
-        
-        "basic_features": [
-            "إدارة الحوادث",
-            "التتبع والمراقبة",
-            "التقارير"
-        ],
-        "advanced_features": [
-            "🔮 Digital Safety Twin - التوأم الرقمي للسلامة",
-            "🧠 AI Safety Brain - العقل المركزي للسلامة",
-            "👷 Worker Risk Profiling - تحليل المخاطر للعمال",
-            "🎮 Safety Gamification - محرك التحفيز",
-            "📖 AI Incident Storytelling - رواية الحوادث الذكية",
-            "✅ Compliance Auto-Auditor - التدقيق التلقائي",
-            "📝 Smart Permit-to-Work AI - تصاريح العمل الذكية",
-            "💼 Executive AI Safety Advisor - المستشار التنفيذي",
-            "🤖 Autonomous Safety Actions - الإجراءات التلقائية",
-            "🌐 Cross-Project Intelligence - الذكاء عبر المشاريع"
-        ] if ADVANCED_FEATURES_ENABLED else [],
-        
-        "next_level_features": [
-            "🧬 Organization Graph - الهيكل كرسم بياني",
-            "👑 Owner Control Center - مركز التحكم المطلق",
-            "🎯 Dynamic Role Intelligence - الأدوار الديناميكية",
-            "🏛️ Safety Constitution - دستور السلامة",
-            "💡 Explainable AI - الذكاء الاصطناعي القابل للتفسير",
-            "🛡️ Liability Shield - الدرع القانوني",
-            "🔬 Micro-Behavior Detection - رصد السلوك الدقيق",
-            "💰 Budget Optimizer - محسن الميزانية",
-            "⚖️ Conflict Resolver - حل النزاعات",
-            "🔮 Shadow Simulation - المحاكاة الموازية",
-            "📚 Knowledge Autopilot - الطيار الآلي للمعرفة",
-            "🏢 Multi-Tenant System - نظام متعدد المستأجرين",
-            "🤝 Authority Balance - توازن السلطة"
-        ] if NEXT_LEVEL_FEATURES_ENABLED else [],
-        
+        "sovereignty_features": (
+            [
+                "🔍 Contextual Sensing - الاستشعار السياقي",
+                "⚖️ Sovereign Decision - القرار السيادي",
+                "⚡ Autonomous Action - التنفيذ الذاتي",
+                "💡 Complete Explanation - التفسير الكامل",
+                "📋 Full Accountability - المحاسبة الكاملة",
+                "🔮 Future Forecasting - التنبؤ بالمستقبل",
+                "👑 Governance Intelligence - ذكاء الحوكمة",
+                "🌌 Shadow Reality - الواقع الموازي",
+            ]
+            if SOVEREIGNTY_ENABLED
+            else []
+        ),
+        "basic_features": ["إدارة الحوادث", "التتبع والمراقبة", "التقارير"],
+        "advanced_features": (
+            [
+                "🔮 Digital Safety Twin - التوأم الرقمي للسلامة",
+                "🧠 AI Safety Brain - العقل المركزي للسلامة",
+                "👷 Worker Risk Profiling - تحليل المخاطر للعمال",
+                "🎮 Safety Gamification - محرك التحفيز",
+                "📖 AI Incident Storytelling - رواية الحوادث الذكية",
+                "✅ Compliance Auto-Auditor - التدقيق التلقائي",
+                "📝 Smart Permit-to-Work AI - تصاريح العمل الذكية",
+                "💼 Executive AI Safety Advisor - المستشار التنفيذي",
+                "🤖 Autonomous Safety Actions - الإجراءات التلقائية",
+                "🌐 Cross-Project Intelligence - الذكاء عبر المشاريع",
+            ]
+            if ADVANCED_FEATURES_ENABLED
+            else []
+        ),
+        "next_level_features": (
+            [
+                "🧬 Organization Graph - الهيكل كرسم بياني",
+                "👑 Owner Control Center - مركز التحكم المطلق",
+                "🎯 Dynamic Role Intelligence - الأدوار الديناميكية",
+                "🏛️ Safety Constitution - دستور السلامة",
+                "💡 Explainable AI - الذكاء الاصطناعي القابل للتفسير",
+                "🛡️ Liability Shield - الدرع القانوني",
+                "🔬 Micro-Behavior Detection - رصد السلوك الدقيق",
+                "💰 Budget Optimizer - محسن الميزانية",
+                "⚖️ Conflict Resolver - حل النزاعات",
+                "🔮 Shadow Simulation - المحاكاة الموازية",
+                "📚 Knowledge Autopilot - الطيار الآلي للمعرفة",
+                "🏢 Multi-Tenant System - نظام متعدد المستأجرين",
+                "🤝 Authority Balance - توازن السلطة",
+            ]
+            if NEXT_LEVEL_FEATURES_ENABLED
+            else []
+        ),
         "exclusive_powers": [
             "Zero-Typing Safety",
             "Safety Singularity Index",
             "AI Safety Copilot",
             "Compliance Without Audits",
             "Budget-to-Risk Optimizer",
-            "Human-AI Authority Balance"
+            "Human-AI Authority Balance",
         ],
-        
         "sovereignty_available": SOVEREIGNTY_ENABLED,
         "advanced_features_available": ADVANCED_FEATURES_ENABLED,
         "next_level_available": NEXT_LEVEL_FEATURES_ENABLED,
-        
         "total_features": (
-            (8 if SOVEREIGNTY_ENABLED else 0) +
-            3 +  # basic
-            (10 if ADVANCED_FEATURES_ENABLED else 0) +
-            (13 if NEXT_LEVEL_FEATURES_ENABLED else 0)
+            (8 if SOVEREIGNTY_ENABLED else 0)
+            + 3  # basic
+            + (10 if ADVANCED_FEATURES_ENABLED else 0)
+            + (13 if NEXT_LEVEL_FEATURES_ENABLED else 0)
         ),
-        
-        "philosophy": "ليس منتجاً يُباع... بل معيار يُفرض"
+        "philosophy": "ليس منتجاً يُباع... بل معيار يُفرض",
     }
-    
+
     return features
 
 
@@ -287,4 +319,3 @@ def get_incident(incident_id: int):
         if item.id == incident_id:
             return item
     raise HTTPException(status_code=404, detail="Incident not found")
-
