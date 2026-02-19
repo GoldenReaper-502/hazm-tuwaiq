@@ -26,12 +26,20 @@ try:
     CV2_AVAILABLE = True
 except Exception:
     CV2_AVAILABLE = False
-import ai_engine
 try:
-    import behavior
+    from backend import ai_engine
+except Exception:
+    import ai_engine
+
+try:
+    from backend import behavior
     BEHAVIOR_AVAILABLE = True
 except Exception:
-    BEHAVIOR_AVAILABLE = False
+    try:
+        import behavior
+        BEHAVIOR_AVAILABLE = True
+    except Exception:
+        BEHAVIOR_AVAILABLE = False
 from pathlib import Path
 from datetime import datetime
 

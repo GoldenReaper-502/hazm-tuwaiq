@@ -21,7 +21,15 @@ try:
 except Exception:
     SHAPELY = False
 
-import cctv
+import importlib.util
+from pathlib import Path
+
+# Ensure we import the CCTV manager module from backend/cctv.py (not backend/cctv/ package)
+_cctv_path = Path(__file__).resolve().parent / "cctv.py"
+_spec = importlib.util.spec_from_file_location("backend_cctv_runtime", str(_cctv_path))
+cctv = importlib.util.module_from_spec(_spec)
+assert _spec and _spec.loader
+_spec.loader.exec_module(cctv)
 
 # In-memory tracking for dwell-time: {camera_id: {track_id: {zone_id: enter_ts}}}
 _DWELL: Dict[str, Dict[int, Dict[str, float]]] = {}

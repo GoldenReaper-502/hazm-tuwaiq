@@ -352,6 +352,7 @@ class SafetyImmuneSystem:
         
         return {
             'immune_strength': self.immune_strength,
+            'antibodies': active_antibodies,
             'total_antibodies': active_antibodies,
             'highly_effective_antibodies': highly_effective,
             'average_antibody_effectiveness': avg_effectiveness,
