@@ -17,6 +17,13 @@ from pydantic import BaseModel, Field
 # Import Authentication System
 from backend.auth import Permission, User, UserRole, auth_system, get_current_user
 from backend.platform.bootstrap import seed_demo_data
+from backend.platform.enterprise_features import (
+    build_board_report,
+    calculate_safety_maturity_score,
+    calculate_usage_billing_estimate,
+    generate_ai_executive_forecast,
+    get_enterprise_features,
+)
 from backend.platform.errors import (
     generic_exception_handler,
     http_exception_handler,
@@ -204,6 +211,33 @@ class DashboardResponse(BaseModel):
     modules_available: Dict[str, bool]
 
 
+class SafetyMaturityRequest(BaseModel):
+    incidents: int = Field(..., ge=0)
+    avg_closure_hours: float = Field(..., ge=0)
+    compliance_rate: float = Field(..., ge=0, le=100)
+    recurrence_rate: float = Field(..., ge=0, le=100)
+
+
+class ExecutiveForecastRequest(BaseModel):
+    last_30d_incidents: int = Field(..., ge=0)
+    open_high_risk_zones: int = Field(..., ge=0)
+    severe_incident_rate: float = Field(..., ge=0, le=100)
+
+
+class BillingEstimateRequest(BaseModel):
+    plan: str = Field(..., min_length=3)
+    users: int = Field(..., ge=0)
+    incidents: int = Field(..., ge=0)
+    cameras: int = Field(..., ge=0)
+
+
+class BoardReportRequest(BaseModel):
+    kpi: Dict[str, Any]
+    spi: float = Field(..., ge=0, le=100)
+    risk_forecast: Dict[str, Any]
+    incident_cost: float = Field(..., ge=0)
+
+
 # ==================== Authentication Endpoints ====================
 
 
@@ -375,6 +409,57 @@ def governance_structure_compat():
             "model": "RBAC + governance matrix",
         },
     }
+
+
+
+
+@app.get("/api/platform/enterprise-features", tags=["🚀 Enterprise Roadmap"])
+def enterprise_features():
+    """Enterprise feature catalog and phased implementation roadmap."""
+    return get_enterprise_features()
+
+
+@app.post("/api/platform/enterprise/sms", tags=["🚀 Enterprise Roadmap"])
+def enterprise_sms(payload: SafetyMaturityRequest):
+    """Calculate Safety Maturity Score (SMS) with A/B/C/D grade."""
+    return calculate_safety_maturity_score(
+        incidents=payload.incidents,
+        avg_closure_hours=payload.avg_closure_hours,
+        compliance_rate=payload.compliance_rate,
+        recurrence_rate=payload.recurrence_rate,
+    )
+
+
+@app.post("/api/platform/enterprise/executive-forecast", tags=["🚀 Enterprise Roadmap"])
+def enterprise_executive_forecast(payload: ExecutiveForecastRequest):
+    """Generate executive 30-day risk forecast."""
+    return generate_ai_executive_forecast(
+        last_30d_incidents=payload.last_30d_incidents,
+        open_high_risk_zones=payload.open_high_risk_zones,
+        severe_incident_rate=payload.severe_incident_rate,
+    )
+
+
+@app.post("/api/platform/enterprise/usage-billing-estimate", tags=["🚀 Enterprise Roadmap"])
+def enterprise_usage_billing(payload: BillingEstimateRequest):
+    """Estimate plan + usage monthly billing for SaaS monetization."""
+    return calculate_usage_billing_estimate(
+        plan=payload.plan,
+        users=payload.users,
+        incidents=payload.incidents,
+        cameras=payload.cameras,
+    )
+
+
+@app.post("/api/platform/enterprise/board-report", tags=["🚀 Enterprise Roadmap"])
+def enterprise_board_report(payload: BoardReportRequest):
+    """Produce executive board report payload (KPI, SPI, forecast, incident cost)."""
+    return build_board_report(
+        kpi=payload.kpi,
+        spi=payload.spi,
+        risk_forecast=payload.risk_forecast,
+        incident_cost=payload.incident_cost,
+    )
 
 
 @app.get("/api/platform/info", tags=["ℹ️ Platform Info"])

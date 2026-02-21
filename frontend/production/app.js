@@ -5,8 +5,8 @@
 
 // ═══ CONFIGURATION ═══
 const CONFIG = {
-    API_BASE: 'http://localhost:8000/api',
-    WS_URL: 'ws://localhost:8000/ws',
+    API_BASE: '/api',
+    WS_URL: `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`,
     REFRESH_INTERVAL: 5000, // 5 seconds
     LANGUAGES: {
         ar: {
