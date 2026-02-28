@@ -126,11 +126,18 @@ body {
 .logo-mark {
     width: 52px;
     height: 52px;
-    object-fit: contain;
-    display: block;
-    filter: drop-shadow(0 6px 10px rgba(0,0,0,0.22));
+border-radius: 14px;
+background: linear-gradient(150deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04));
+display: grid;
+place-items: center;
+color: #2ac18f;
+box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
 }
 
+.logo-svg {
+    width: 38px;
+    height: 38px;
+}
 
 .logo-copy {
     min-width: 0;

@@ -160,6 +160,160 @@ const PAGE_TITLE_KEYS = {
   reports: 'nav_reports',
 };
 
+const I18N = {
+  ar: {
+    app_title: 'السلامة الذكية | Smart Safety - منصة الذكاء الاصطناعي للسلامة',
+    logo_title: 'حزم طويق',
+    home: 'الرئيسية',
+    loading: 'جاري التحميل...',
+    connected: 'متصل',
+    nav_dashboard: 'لوحة التحكم',
+    nav_cameras: 'الكاميرات',
+    nav_detection: 'الكشف والقراءة',
+    nav_chatbot: 'المساعد الذكي',
+    nav_incidents: 'الحوادث',
+    nav_risk: 'تقييم المخاطر',
+    nav_inspections: 'التفتيش',
+    nav_reports: 'التقارير',
+    stat_cameras: 'الكاميرات النشطة',
+    stat_detections: 'الكشوفات اليوم',
+    stat_incidents: 'الحوادث المفتوحة',
+    stat_chats: 'المحادثات',
+    recent_incidents: 'الحوادث الأخيرة',
+    recent_detections: 'الكشوفات الأخيرة',
+    view_all: 'عرض الكل',
+    add_camera: 'إضافة كاميرا جديدة',
+    loading_cameras: 'جاري تحميل الكاميرات...',
+    upload_detection: 'رفع صورة للكشف والقراءة',
+    upload_hint: 'اضغط أو اسحب صورة هنا',
+    choose_image: 'اختر صورة',
+    detect_objects: 'كشف الأشياء',
+    detection_history: 'سجل الكشوفات',
+    chatbot_title: '💬 المساعد الذكي للسلامة',
+    clear_chat: 'مسح المحادثة',
+    chatbot_welcome: 'مرحباً بك في المساعد الذكي!',
+    chatbot_help: 'أنا هنا لمساعدتك في كل ما يتعلق بالسلامة والصحة المهنية',
+    quick_safety: 'إجراءات السلامة',
+    quick_report: 'الإبلاغ عن حادثة',
+    quick_iso: 'معايير ISO 45001',
+    chat_placeholder: 'اكتب سؤالك هنا...',
+    report_incident: 'الإبلاغ عن حادثة',
+    all_incidents: 'كل الحوادث',
+    critical: 'حرجة',
+    high: 'عالية',
+    medium: 'متوسطة',
+    low: 'منخفضة',
+    loading_incidents: 'جاري تحميل الحوادث...',
+    new_risk: 'تقييم مخاطر جديد',
+    loading_risks: 'جاري تحميل تقييمات المخاطر...',
+    new_inspection: 'تفتيش جديد',
+    loading_inspections: 'جاري تحميل التفتيشات...',
+    new_report: 'توليد تقرير جديد',
+    export_data: 'تصدير البيانات',
+    available_reports: 'التقارير المتاحة',
+    loading_reports: 'جاري تحميل التقارير...',
+    no_incidents: 'لا توجد حوادث',
+    no_detections: 'لا توجد كشوفات',
+    no_cameras: 'لا توجد كاميرات',
+    no_risks: 'لا توجد مخاطر',
+    no_inspections: 'لا توجد تفتيشات',
+    no_data: 'لا يوجد',
+    chat_error: 'خطأ',
+    risk_label: 'المخاطر',
+    status_label: 'الحالة',
+    residual_label: 'المتبقي',
+    weekly_report: 'تقرير أسبوعي',
+    generated: 'تم التوليد',
+    camera_health: 'حالة الكاميرا',
+    camera_name_prompt: 'اسم الكاميرا',
+    incident_title_prompt: 'عنوان الحادثة',
+    hazard_prompt: 'الخطر',
+    add: 'إضافة',
+    health: 'الحالة',
+  },
+  en: {
+    app_title: 'Smart Safety | AI Safety Platform',
+    logo_title: 'Hazm Tuwaiq',
+    home: 'Home',
+    loading: 'Loading...',
+    connected: 'Connected',
+    nav_dashboard: 'Dashboard',
+    nav_cameras: 'Cameras',
+    nav_detection: 'Detection',
+    nav_chatbot: 'AI Assistant',
+    nav_incidents: 'Incidents',
+    nav_risk: 'Risk Assessment',
+    nav_inspections: 'Inspections',
+    nav_reports: 'Reports',
+    stat_cameras: 'Active Cameras',
+    stat_detections: 'Detections Today',
+    stat_incidents: 'Open Incidents',
+    stat_chats: 'Conversations',
+    recent_incidents: 'Recent Incidents',
+    recent_detections: 'Recent Detections',
+    view_all: 'View All',
+    add_camera: 'Add New Camera',
+    loading_cameras: 'Loading cameras...',
+    upload_detection: 'Upload Image for Detection',
+    upload_hint: 'Click or drag an image here',
+    choose_image: 'Choose Image',
+    detect_objects: 'Detect Objects',
+    detection_history: 'Detection History',
+    chatbot_title: '💬 AI Safety Assistant',
+    clear_chat: 'Clear Chat',
+    chatbot_welcome: 'Welcome to AI Assistant!',
+    chatbot_help: 'I am here to help you with safety and occupational health topics.',
+    quick_safety: 'Safety Procedures',
+    quick_report: 'Report Incident',
+    quick_iso: 'ISO 45001 Standards',
+    chat_placeholder: 'Type your question here...',
+    report_incident: 'Report Incident',
+    all_incidents: 'All Incidents',
+    critical: 'Critical',
+    high: 'High',
+    medium: 'Medium',
+    low: 'Low',
+    loading_incidents: 'Loading incidents...',
+    new_risk: 'New Risk Assessment',
+    loading_risks: 'Loading risk assessments...',
+    new_inspection: 'New Inspection',
+    loading_inspections: 'Loading inspections...',
+    new_report: 'Generate New Report',
+    export_data: 'Export Data',
+    available_reports: 'Available Reports',
+    loading_reports: 'Loading reports...',
+    no_incidents: 'No incidents',
+    no_detections: 'No detections',
+    no_cameras: 'No cameras',
+    no_risks: 'No risks',
+    no_inspections: 'No inspections',
+    no_data: 'No data',
+    chat_error: 'Error',
+    risk_label: 'Risk',
+    status_label: 'Status',
+    residual_label: 'Residual',
+    weekly_report: 'Weekly Report',
+    generated: 'Generated',
+    camera_health: 'Camera health',
+    camera_name_prompt: 'Camera name',
+    incident_title_prompt: 'Incident title',
+    hazard_prompt: 'Hazard',
+    add: 'Add',
+    health: 'Health',
+  },
+};
+
+const PAGE_TITLE_KEYS = {
+  dashboard: 'nav_dashboard',
+  cameras: 'nav_cameras',
+  detection: 'nav_detection',
+  chatbot: 'nav_chatbot',
+  incidents: 'nav_incidents',
+  risk: 'nav_risk',
+  inspections: 'nav_inspections',
+  reports: 'nav_reports',
+};
+
 const state = {
   theme: localStorage.getItem('theme') || 'light',
   language: localStorage.getItem('language') || 'ar',
@@ -169,7 +323,6 @@ const state = {
 };
 
 let healthIntervalId = null;
-
 function t(key) {
   return I18N[state.language]?.[key] || I18N.ar[key] || key;
 }
@@ -187,8 +340,7 @@ function applyTranslations() {
 
   setText('.logo-text', 'logo_title');
   setText('.breadcrumb span:first-child', 'home');
-  const statusLabel = document.querySelector('#systemStatus span:last-child');
-  if (statusLabel && !document.getElementById('retryConnectionBtn')) statusLabel.textContent = t('loading');
+setText('#systemStatus span:last-child', 'loading');
 
   setText('[data-page="dashboard"] .nav-text', 'nav_dashboard');
   setText('[data-page="cameras"] .nav-text', 'nav_cameras');
@@ -252,27 +404,49 @@ function updatePageTitle() {
   document.getElementById('breadcrumbPage').textContent = t(key);
 }
 
-
 function updateSystemStatus(isConnected, errorMessage = '') {
   const b = document.getElementById('systemStatus');
   if (!b) return;
+
   if (isConnected) {
     b.classList.remove('is-disconnected');
     b.innerHTML = `<span class="status-dot"></span><span>${t('connected')}</span>`;
     return;
   }
+
   b.classList.add('is-disconnected');
-  const details = errorMessage ? `<small class="status-error">${errorMessage}</small>` : '';
-  b.innerHTML = `<span class="status-dot"></span><span>${t('disconnected')}</span><button class="status-retry" id="retryConnectionBtn">${t('retry_connection')}</button>${details}`;
-  document.getElementById('retryConnectionBtn')?.addEventListener('click', () => pingHealth(true));
+
+  const details = errorMessage
+    ? `<small class="status-error">${errorMessage}</small>`
+    : '';
+
+  b.innerHTML = `
+    <span class="status-dot"></span>
+    <span>${t('disconnected')}</span>
+    <button class="status-retry" id="retryConnectionBtn">
+      ${t('retry_connection')}
+    </button>
+    ${details}
+  `;
+
+  document
+    .getElementById('retryConnectionBtn')
+    ?.addEventListener('click', () => pingHealth(true));
 }
 
 async function pingHealth(showError = false) {
   try {
-    const response = await fetch(`${CONFIG.API_BASE_URL}/health`, { headers: { Accept: 'application/json' } });
+    const response = await fetch(`${CONFIG.API_BASE_URL}/health`, {
+      headers: { Accept: 'application/json' }
+    });
+
     const data = await response.json().catch(() => ({}));
-    if (!response.ok || data.status !== 'ok') throw new Error(`HTTP ${response.status}`);
+
+    if (!response.ok || data.status !== 'ok')
+      throw new Error(`HTTP ${response.status}`);
+
     updateSystemStatus(true);
+
   } catch (e) {
     updateSystemStatus(false, showError ? e.message : '');
   }
@@ -280,10 +454,10 @@ async function pingHealth(showError = false) {
 
 function startHealthMonitor() {
   if (healthIntervalId) clearInterval(healthIntervalId);
+
   pingHealth();
   healthIntervalId = setInterval(() => pingHealth(), 10000);
 }
-
 async function apiFetch(endpoint, options = {}) {
   const headers = { Accept: 'application/json', ...(options.headers || {}) };
   if (!(options.body instanceof FormData)) headers['Content-Type'] = 'application/json';
@@ -331,7 +505,7 @@ async function loadDashboard() {
     document.getElementById('chatsCount').textContent = state.chatHistory.length;
     document.getElementById('recentIncidents').innerHTML = (data.last_incidents || []).map(x => `<div class="incident-item"><strong>${x.title}</strong><small>${x.created_at || ''}</small></div>`).join('') || `<div class="loading">${t('no_incidents')}</div>`;
     document.getElementById('recentDetections').innerHTML = (data.last_detections || []).map(x => `<div class="incident-item"><strong>${x.event_type}</strong><small>${x.created_at || ''}</small></div>`).join('') || `<div class="loading">${t('no_detections')}</div>`;
-    updateSystemStatus(true);
+updateSystemStatus(true);
   } catch (e) { showError('recentIncidents', e); showError('recentDetections', e); }
 }
 
@@ -465,7 +639,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('chatInput')?.addEventListener('keypress', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } });
   setupDetectionUpload();
   applyTranslations();
-  startHealthMonitor();
+startHealthMonitor();
   await ensureLogin();
   loadPageData('dashboard');
 });
