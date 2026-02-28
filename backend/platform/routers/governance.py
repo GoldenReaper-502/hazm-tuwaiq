@@ -11,9 +11,20 @@ router = APIRouter(prefix="/governance", tags=["governance"])
 
 RBAC = {
     "admin": ["*"],
-    "hse": ["incidents", "observations", "reports", "environment", "training"],
-    "supervisor": ["observations", "ptw", "behavior_analytics"],
+    "safety_officer": [
+        "incidents",
+        "observations",
+        "reports",
+        "environment",
+        "training",
+        "risks",
+        "checklists",
+    ],
+    "inspector": ["inspections", "checklists", "reports", "observations"],
+    "supervisor": ["observations", "ptw", "behavior_analytics", "incidents"],
     "viewer": ["read_only"],
+    # legacy alias for backward compatibility
+    "hse": ["incidents", "observations", "reports", "environment", "training"],
 }
 
 

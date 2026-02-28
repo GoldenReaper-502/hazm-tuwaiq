@@ -324,6 +324,57 @@ Owner يحدد:
 - مقارنة مجهولة
 - Benchmark ذكي
 
+### 👁️ Behavior AI (قراءة السلوك البشري)
+يعتمد على:
+- تتبع حركة الأشخاص (Person Tracking)
+- Zone Violation Detection
+- Proximity Detection (شخص/معدة مثل Forklift)
+- Near-Miss Prediction
+
+**سيناريو تشغيلي أساسي:**
+- Forklift + شخص + منطقة محظورة
+- يتم تحليل المشهد عبر YOLO داخل الـ backend مع قواعد السلامة.
+
+**للتفعيل الاحترافي ميدانيًا يلزم:**
+- كاميرا فعلية في الموقع
+- بث RTSP مستقر
+- OpenCV Stream Pipeline
+- ضبط Thresholds وتقليل الإنذارات الكاذبة
+
+### 🔐 RBAC احترافي (نظام الأدوار)
+الأدوار القياسية المستهدفة:
+- Admin
+- Safety Officer
+- Inspector
+- Supervisor
+- Viewer
+
+ويتم ربط صلاحيات الـ API عبر JWT + Role Middleware.
+
+### ✅ Checklists مخصصة
+- Checklist مرتبط بالحوادث
+- Checklist حسب نوع الموقع
+- Checklist حسب المخاطر
+- تخزين مركزي في قاعدة البيانات
+- تصدير PDF للتدقيق والامتثال
+
+### 📊 Risk Assessment احترافي
+- Likelihood × Severity
+- Risk Matrix 5×5
+- Heatmap للمخاطر
+- توصيات ذكية تلقائية مدعومة بالذكاء الاصطناعي
+
+### 🌍 كيف يتحول إلى Enterprise AI Platform
+لبناء نسخة إطلاق سوقي عالمية، يلزم:
+- PostgreSQL بدل SQLite
+- Redis للـ cache والمهام الفورية
+- Background Workers
+- Model Retraining Pipeline
+- Event-driven Alerts
+- WebSocket Live Feed
+- Role-Based Access Control شامل
+- AI Retraining Loop
+
 ---
 
 ## 🔧 التقنيات المستخدمة
