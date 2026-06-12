@@ -12,7 +12,9 @@ def seed_demo_data() -> None:
     with get_conn() as conn:
         users = [
             ("admin", "Admin@123", "Platform Admin", "admin", "HSE", "HQ"),
-            ("hse", "HSE@123", "HSE Officer", "hse", "Safety", "Plant-1"),
+            ("hse", "HSE@123", "HSE Officer", "safety_officer", "Safety", "Plant-1"),
+            ("safety", "Safe@123", "Safety Officer", "safety_officer", "Safety", "Plant-1"),
+            ("inspector", "Insp@123", "Field Inspector", "inspector", "Safety", "Plant-1"),
             (
                 "supervisor",
                 "Sup@123",

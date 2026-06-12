@@ -11,12 +11,16 @@ from backend.platform.db import get_conn
 
 ROLE_MAP = {
     "Admin": "admin",
-    "HSE Officer": "hse",
+    "HSE Officer": "safety_officer",
+    "Safety Officer": "safety_officer",
+    "Inspector": "inspector",
     "Supervisor": "supervisor",
     "Viewer": "viewer",
     "Auditor": "auditor",
     "admin": "admin",
-    "hse": "hse",
+    "hse": "safety_officer",
+    "safety_officer": "safety_officer",
+    "inspector": "inspector",
     "supervisor": "supervisor",
     "viewer": "viewer",
     "auditor": "auditor",

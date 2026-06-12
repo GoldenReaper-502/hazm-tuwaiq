@@ -69,7 +69,7 @@ def list_incidents(
 def create_incident(
     body: IncidentIn,
     request: Request,
-    _=Depends(require_any_role(["admin", "hse", "supervisor"])),
+    _=Depends(require_any_role(["admin", "safety_officer", "inspector", "supervisor", "hse"])),
 ):
     risk_score = body.severity * body.likelihood
     escalation_level = 2 if risk_score >= 16 else (1 if risk_score >= 9 else 0)
@@ -142,7 +142,7 @@ def patch_incident(
     incident_id: int,
     body: IncidentIn,
     request: Request,
-    _=Depends(require_any_role(["admin", "hse"])),
+    _=Depends(require_any_role(["admin", "safety_officer", "inspector", "hse"])),
 ):
     risk_score = body.severity * body.likelihood
     escalation_level = 2 if risk_score >= 16 else (1 if risk_score >= 9 else 0)
